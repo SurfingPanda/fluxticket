@@ -25,7 +25,7 @@ class TicketStatusUpdatedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.ticket-status-updated',
+            view: 'emails.ticket-status-updated',
         );
     }
 }

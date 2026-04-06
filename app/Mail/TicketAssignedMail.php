@@ -25,7 +25,7 @@ class TicketAssignedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.ticket-assigned',
+            view: 'emails.ticket-assigned',
         );
     }
 }
