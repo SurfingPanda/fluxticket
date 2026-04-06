@@ -235,21 +235,29 @@
         </div>
 
         @php
-        $_isSA  = auth()->check() && auth()->user()->role === 'super_admin';
-        $_perm  = $_isSA ? [] : auth()->user()->effectivePageAccess();
+        $_u     = auth()->user();
+        $_isSA  = $_u && $_u->role === 'super_admin';
+        $_perm  = $_isSA ? array_fill_keys(['agents','reports','knowledge_read','knowledge_write','settings'], true)
+                         : $_u->effectivePageAccess();
+        $_showAgents    = $_isSA || !empty($_perm['agents']);
+        $_showReports   = $_isSA || !empty($_perm['reports']);
+        $_showKb        = $_isSA || !empty($_perm['knowledge_read']);
+        $_showSettings  = $_isSA || !empty($_perm['settings']);
+        $_showManage    = $_showAgents || $_showReports || $_showKb || $_isSA;
         @endphp
+        @if($_showManage)
         <div class="sidebar-section-label">Manage</div>
-        @if($_isSA || ($_perm['agents'] ?? true))
+        @if($_showAgents)
         <a class="nav-item-link {{ $ap==='agents'?'active':'' }}" href="{{ route('agents.index') }}">
             <i class="bi bi-people nav-icon"></i><span class="nav-text">Agents</span>
         </a>
         @endif
-        @if($_isSA || ($_perm['reports'] ?? true))
+        @if($_showReports)
         <a class="nav-item-link {{ $ap==='reports'?'active':'' }}" href="{{ route('reports.index') }}">
             <i class="bi bi-bar-chart-line nav-icon"></i><span class="nav-text">Reports</span>
         </a>
         @endif
-        @if($_isSA || ($_perm['knowledge_read'] ?? true))
+        @if($_showKb)
         <a class="nav-item-link {{ $ap==='knowledge'?'active':'' }}" href="{{ route('knowledge.index') }}">
             <i class="bi bi-book nav-icon"></i><span class="nav-text">Knowledge Base</span>
         </a>
@@ -259,9 +267,10 @@
             <i class="bi bi-shield-lock nav-icon"></i><span class="nav-text">Role Access & Permission</span>
         </a>
         @endif
+        @endif
 
+        @if($_showSettings)
         <div class="sidebar-section-label">System</div>
-        @if($_isSA || ($_perm['settings'] ?? true))
         <a class="nav-item-link {{ $ap==='settings'?'active':'' }}" href="{{ route('settings.index') }}">
             <i class="bi bi-gear nav-icon"></i><span class="nav-text">Settings</span>
         </a>

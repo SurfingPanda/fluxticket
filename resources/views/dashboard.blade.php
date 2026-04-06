@@ -587,28 +587,48 @@
             </a>
         </div>
 
-        <div class="sidebar-section-label">Manage</div>
+        @php
+        $_du    = auth()->user();
+        $_disSA = $_du && $_du->role === 'super_admin';
+        $_dperm = $_disSA ? array_fill_keys(['agents','reports','knowledge_read','knowledge_write','settings'], true)
+                          : $_du->effectivePageAccess();
+        $_dShowAgents  = $_disSA || !empty($_dperm['agents']);
+        $_dShowReports = $_disSA || !empty($_dperm['reports']);
+        $_dShowKb      = $_disSA || !empty($_dperm['knowledge_read']);
+        $_dShowSettings= $_disSA || !empty($_dperm['settings']);
+        $_dShowManage  = $_dShowAgents || $_dShowReports || $_dShowKb || $_disSA;
+        @endphp
 
+        @if($_dShowManage)
+        <div class="sidebar-section-label">Manage</div>
+        @if($_dShowAgents)
         <a class="nav-item-link" href="{{ route('agents.index') }}">
             <i class="bi bi-people nav-icon"></i><span class="nav-text">Agents</span>
         </a>
+        @endif
+        @if($_dShowReports)
         <a class="nav-item-link" href="{{ route('reports.index') }}">
             <i class="bi bi-bar-chart-line nav-icon"></i><span class="nav-text">Reports</span>
         </a>
+        @endif
+        @if($_dShowKb)
         <a class="nav-item-link" href="{{ route('knowledge.index') }}">
             <i class="bi bi-book nav-icon"></i><span class="nav-text">Knowledge Base</span>
         </a>
-        @if(auth()->check() && auth()->user()->role === 'super_admin')
+        @endif
+        @if($_disSA)
         <a class="nav-item-link" href="{{ route('roles.index') }}">
             <i class="bi bi-shield-lock nav-icon"></i><span class="nav-text">Role Access & Permission</span>
         </a>
         @endif
+        @endif
 
+        @if($_dShowSettings)
         <div class="sidebar-section-label">System</div>
-
         <a class="nav-item-link" href="{{ route('settings.index') }}">
             <i class="bi bi-gear nav-icon"></i><span class="nav-text">Settings</span>
         </a>
+        @endif
     </div>
 
     {{-- User --}}

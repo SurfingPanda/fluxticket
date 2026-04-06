@@ -278,15 +278,36 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
                 <i class="bi bi-send nav-icon" style="font-size:.85rem"></i><span class="nav-text">Submitted Requests</span>
             </a>
         </div>
+        @php
+        $_tu    = auth()->user();
+        $_tisSA = $_tu && $_tu->role === 'super_admin';
+        $_tperm = $_tisSA ? array_fill_keys(['agents','reports','knowledge_read','knowledge_write','settings'], true)
+                          : $_tu->effectivePageAccess();
+        $_tShowAgents  = $_tisSA || !empty($_tperm['agents']);
+        $_tShowReports = $_tisSA || !empty($_tperm['reports']);
+        $_tShowKb      = $_tisSA || !empty($_tperm['knowledge_read']);
+        $_tShowSettings= $_tisSA || !empty($_tperm['settings']);
+        $_tShowManage  = $_tShowAgents || $_tShowReports || $_tShowKb || $_tisSA;
+        @endphp
+        @if($_tShowManage)
         <div class="sidebar-section-label">Manage</div>
+        @if($_tShowAgents)
         <a class="nav-item-link" href="{{ route('agents.index') }}"><i class="bi bi-people nav-icon"></i><span class="nav-text">Agents</span></a>
+        @endif
+        @if($_tShowReports)
         <a class="nav-item-link" href="{{ route('reports.index') }}"><i class="bi bi-bar-chart-line nav-icon"></i><span class="nav-text">Reports</span></a>
+        @endif
+        @if($_tShowKb)
         <a class="nav-item-link" href="{{ route('knowledge.index') }}"><i class="bi bi-book nav-icon"></i><span class="nav-text">Knowledge Base</span></a>
-        @if(auth()->check() && auth()->user()->role === 'super_admin')
+        @endif
+        @if($_tisSA)
         <a class="nav-item-link" href="{{ route('roles.index') }}"><i class="bi bi-shield-lock nav-icon"></i><span class="nav-text">Role Access & Permission</span></a>
         @endif
+        @endif
+        @if($_tShowSettings)
         <div class="sidebar-section-label">System</div>
         <a class="nav-item-link" href="{{ route('settings.index') }}"><i class="bi bi-gear nav-icon"></i><span class="nav-text">Settings</span></a>
+        @endif
     </div>
     <div class="sidebar-footer">
         <div class="user-chip">
