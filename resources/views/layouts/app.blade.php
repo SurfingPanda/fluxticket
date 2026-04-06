@@ -195,7 +195,7 @@
 <aside class="sidebar" id="appSidebar">
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <img src="{{ asset('image/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo">
+            <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo">
         </div>
         <span class="brand-name">FluxTickets</span>
     </div>

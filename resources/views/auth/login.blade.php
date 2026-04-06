@@ -294,7 +294,7 @@
                 <div style="position:relative;z-index:1">
                     {{-- Logo --}}
                     <div class="d-flex align-items-center gap-3 mb-4">
-                        <img src="{{ asset('image/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo" style="width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(180,20,40,.55)) brightness(1.1)">
+                        <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo" style="width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(180,20,40,.55)) brightness(1.1)">
                         <span class="text-white fw-bold" style="font-size:1.35rem;letter-spacing:-.01em">FluxTickets</span>
                     </div>
 
