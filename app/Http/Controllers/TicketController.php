@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TicketAssignedMail;
+use App\Mail\TicketStatusUpdatedMail;
 use App\Models\TicketNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class TicketController extends Controller
 {
@@ -66,6 +69,9 @@ class TicketController extends Controller
             if ($assignee) {
                 $this->notify($assignee->id, 'assigned', $ticket,
                     "New ticket {$ticket->ticket_number} has been assigned to you: \"{$ticket->subject}\"");
+                if ($assignee->email) {
+                    Mail::to($assignee->email)->send(new TicketAssignedMail($ticket));
+                }
             }
         }
 
@@ -114,6 +120,10 @@ class TicketController extends Controller
             $oldLabel = $statusLabel[$oldStatus] ?? $oldStatus;
             $this->notify($ticket->user_id, 'status_changed', $ticket,
                 "Your ticket {$ticket->ticket_number} status changed to \"{$label}\".");
+            $submitter = \App\Models\User::find($ticket->user_id);
+            if ($submitter?->email) {
+                Mail::to($submitter->email)->send(new TicketStatusUpdatedMail($ticket, $oldLabel, $label));
+            }
 
             // Log status change as an activity note
             \App\Models\TicketNote::create([
@@ -130,6 +140,9 @@ class TicketController extends Controller
             if ($assignee) {
                 $this->notify($assignee->id, 'assigned', $ticket,
                     "Ticket {$ticket->ticket_number} has been assigned to you: \"{$ticket->subject}\"");
+                if ($assignee->email) {
+                    Mail::to($assignee->email)->send(new TicketAssignedMail($ticket));
+                }
             }
         }
 
