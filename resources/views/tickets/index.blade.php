@@ -1698,6 +1698,7 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
 (function() {
     const overlay   = document.getElementById('kbaConfirmBackdrop');
     const cancelBtn = document.getElementById('kbaAttachCancel');
+    if (!overlay || !cancelBtn) return;
     cancelBtn.addEventListener('click', closeKbaAttachModal);
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeKbaAttachModal(); });
     document.addEventListener('keydown', function(e) {
