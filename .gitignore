@@ -45,4 +45,5 @@ desktop.ini
 
 # Uploads & user-generated content
 /public/uploads
+/public/image
 /storage/app/public/uploads
