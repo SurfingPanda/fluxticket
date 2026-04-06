@@ -4,27 +4,23 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     if (auth()->check()) return redirect()->route('dashboard');
-    $tickets = \App\Models\Ticket::all();
-    $resolved = $tickets->whereIn('status', ['resolved', 'closed']);
-    $slaTotal = $tickets->whereNotNull('sla_due_at')->count();
-    $slaMet   = $tickets->where('sla_status', 'met')->count();
     $landingStats = [
-        'total'       => $tickets->count(),
-        'open'        => $tickets->where('status', 'open')->count(),
-        'progress'    => $tickets->where('status', 'progress')->count(),
-        'resolved'    => $tickets->where('status', 'resolved')->count(),
-        'closed'      => $tickets->where('status', 'closed')->count(),
-        'high'        => $tickets->where('priority', 'high')->count(),
-        'medium'      => $tickets->where('priority', 'medium')->count(),
-        'low'         => $tickets->where('priority', 'low')->count(),
-        'res_rate'    => $tickets->count() ? round($resolved->count() / $tickets->count() * 100) : 0,
-        'sla_rate'    => $slaTotal ? round($slaMet / $slaTotal * 100) : 0,
-        'agents'      => \App\Models\User::where('role', 'agent')->count(),
-        'by_type'     => [
-            'Incident'       => $tickets->where('type', 'Incident')->count(),
-            'Service Request'=> $tickets->where('type', 'Service Request')->count(),
-            'Question'       => $tickets->where('type', 'Question')->count(),
-            'Change Request' => $tickets->where('type', 'Change Request')->count(),
+        'total'    => 248,
+        'open'     => 74,
+        'progress' => 56,
+        'resolved' => 89,
+        'closed'   => 29,
+        'high'     => 41,
+        'medium'   => 103,
+        'low'      => 104,
+        'res_rate' => 48,
+        'sla_rate' => 91,
+        'agents'   => 18,
+        'by_type'  => [
+            'Incident'        => 52,
+            'Service Request' => 112,
+            'Question'        => 47,
+            'Change Request'  => 37,
         ],
     ];
     return view('landing', compact('landingStats'));
