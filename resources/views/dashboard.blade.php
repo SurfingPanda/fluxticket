@@ -598,6 +598,11 @@
         <a class="nav-item-link" href="{{ route('knowledge.index') }}">
             <i class="bi bi-book nav-icon"></i><span class="nav-text">Knowledge Base</span>
         </a>
+        @if(auth()->check() && auth()->user()->role === 'super_admin')
+        <a class="nav-item-link" href="{{ route('roles.index') }}">
+            <i class="bi bi-shield-lock nav-icon"></i><span class="nav-text">Role Access & Permission</span>
+        </a>
+        @endif
 
         <div class="sidebar-section-label">System</div>
 

@@ -282,6 +282,9 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
         <a class="nav-item-link" href="{{ route('agents.index') }}"><i class="bi bi-people nav-icon"></i><span class="nav-text">Agents</span></a>
         <a class="nav-item-link" href="{{ route('reports.index') }}"><i class="bi bi-bar-chart-line nav-icon"></i><span class="nav-text">Reports</span></a>
         <a class="nav-item-link" href="{{ route('knowledge.index') }}"><i class="bi bi-book nav-icon"></i><span class="nav-text">Knowledge Base</span></a>
+        @if(auth()->check() && auth()->user()->role === 'super_admin')
+        <a class="nav-item-link" href="{{ route('roles.index') }}"><i class="bi bi-shield-lock nav-icon"></i><span class="nav-text">Role Access & Permission</span></a>
+        @endif
         <div class="sidebar-section-label">System</div>
         <a class="nav-item-link" href="{{ route('settings.index') }}"><i class="bi bi-gear nav-icon"></i><span class="nav-text">Settings</span></a>
     </div>
