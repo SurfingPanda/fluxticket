@@ -1242,13 +1242,29 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
     }
 
     function renderNoteHtml(n) {
-        const isRoute  = n.type === 'route_event';
+        const isRoute        = n.type === 'route_event';
+        const isStatusChange = n.type === 'status_change';
         const initial  = (n.user?.name || '?').charAt(0).toUpperCase();
         const dateStr  = new Date(n.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
         const rawBody  = (n.content || '')
             .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
             .replace(/^&gt; (.+)$/gm,'<div style="border-left:3px solid rgba(99,102,241,.3);padding-left:.6rem;color:var(--muted);margin-top:.3rem;font-size:.8rem">$1</div>');
+
+        if (isStatusChange) {
+            return `<div style="display:flex;gap:.7rem;margin-bottom:.85rem;align-items:flex-start">
+                <div style="width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:white;background:linear-gradient(135deg,#0891b2,#0e7490)">${initial}</div>
+                <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.3rem">
+                        <span style="font-size:.8rem;font-weight:600;color:var(--text)">${n.user?.name || 'Unknown'}</span>
+                        <span style="font-size:.63rem;font-weight:700;text-transform:uppercase;background:rgba(8,145,178,.15);color:#22d3ee;padding:.1rem .45rem;border-radius:9999px;letter-spacing:.04em"><i class="bi bi-arrow-repeat"></i> Status Update</span>
+                        <span style="font-size:.7rem;color:var(--muted)">${dateStr}</span>
+                    </div>
+                    <div style="font-size:.83rem;color:var(--text);line-height:1.55;background:rgba(8,145,178,.07);border:1px solid rgba(8,145,178,.25);border-radius:.5rem;padding:.55rem .8rem">${rawBody}</div>
+                </div>
+            </div>`;
+        }
+
         const avatarBg = isRoute ? 'linear-gradient(135deg,#2563eb,#4f46e5)' : 'linear-gradient(135deg,#4f46e5,#7c3aed)';
         const chip     = isRoute
             ? `<span style="font-size:.63rem;font-weight:700;text-transform:uppercase;background:rgba(59,130,246,.15);color:#60a5fa;padding:.1rem .45rem;border-radius:9999px;letter-spacing:.04em"><i class="bi bi-arrow-left-right"></i> Routed</span>`

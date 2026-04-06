@@ -110,9 +110,18 @@ class TicketController extends Controller
         // Notify the ticket submitter about the status change
         if ($oldStatus !== $data['status']) {
             $statusLabel = ['open' => 'Open', 'progress' => 'In Progress', 'resolved' => 'Resolved', 'closed' => 'Closed'];
-            $label = $statusLabel[$data['status']] ?? $data['status'];
+            $label    = $statusLabel[$data['status']] ?? $data['status'];
+            $oldLabel = $statusLabel[$oldStatus] ?? $oldStatus;
             $this->notify($ticket->user_id, 'status_changed', $ticket,
                 "Your ticket {$ticket->ticket_number} status changed to \"{$label}\".");
+
+            // Log status change as an activity note
+            \App\Models\TicketNote::create([
+                'ticket_id' => $ticket->id,
+                'user_id'   => auth()->id(),
+                'type'      => 'status_change',
+                'content'   => "Status changed from **{$oldLabel}** to **{$label}**",
+            ]);
         }
 
         // Notify a newly assigned agent
