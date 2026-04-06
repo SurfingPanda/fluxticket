@@ -40,7 +40,7 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
         .nav-dropdown-trigger { width:100%; background:none; border:none; text-align:left; font-family:inherit; cursor:pointer; }
         .nav-chevron { font-size:.68rem; margin-left:auto; flex-shrink:0; transition:transform .25s cubic-bezier(.4,0,.2,1); }
         .nav-submenu { overflow:hidden; max-height:0; transition:max-height .3s cubic-bezier(.4,0,.2,1); }
-        .nav-submenu.open { max-height:350px; }
+        .nav-submenu.open { max-height:420px; }
         .nav-sub-item { padding-left:2.1rem !important; font-size:.78rem; }
         .sidebar.mini .nav-chevron,.sidebar.mini .nav-submenu { display:none; }
         .nav-icon { font-size:1rem; flex-shrink:0; }
@@ -256,7 +256,7 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
             <i class="bi bi-chevron-down nav-chevron nav-badge"></i>
         </button>
         <div class="nav-submenu open" id="ticketsSubmenu">
-            <a class="nav-item-link nav-sub-item {{ !($type??null) ? 'active' : '' }}" href="{{ route('tickets.index') }}">
+            <a class="nav-item-link nav-sub-item {{ !($type??null) && !request('submitted') ? 'active' : '' }}" href="{{ route('tickets.index') }}">
                 <i class="bi bi-ticket nav-icon" style="font-size:.85rem"></i><span class="nav-text">All Tickets</span>
             </a>
             <a class="nav-item-link nav-sub-item" href="{{ route('queue') }}">
@@ -273,6 +273,9 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
             </a>
             <a class="nav-item-link nav-sub-item {{ ($type??null)==='change_request' ? 'active' : '' }}" href="{{ route('tickets.index',['type'=>'change_request']) }}">
                 <i class="bi bi-arrow-repeat nav-icon" style="font-size:.85rem"></i><span class="nav-text">Change Request</span>
+            </a>
+            <a class="nav-item-link nav-sub-item {{ request('submitted') ? 'active' : '' }}" href="{{ route('tickets.index',['submitted'=>1]) }}">
+                <i class="bi bi-send nav-icon" style="font-size:.85rem"></i><span class="nav-text">Submitted Requests</span>
             </a>
         </div>
         <div class="sidebar-section-label">Manage</div>

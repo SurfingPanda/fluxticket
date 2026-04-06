@@ -113,7 +113,7 @@
         .nav-dropdown-trigger { width:100%; background:none; border:none; text-align:left; font-family:inherit; cursor:pointer; }
         .nav-chevron { font-size:.68rem; margin-left:auto; flex-shrink:0; transition:transform .25s cubic-bezier(.4,0,.2,1); }
         .nav-submenu { overflow:hidden; max-height:0; transition:max-height .3s cubic-bezier(.4,0,.2,1); }
-        .nav-submenu.open { max-height:350px; }
+        .nav-submenu.open { max-height:420px; }
         .nav-sub-item { padding-left:2.1rem !important; font-size:.78rem; }
         .sidebar.mini .nav-chevron,.sidebar.mini .nav-submenu { display:none; }
         .nav-item-link .nav-icon { font-size: 1rem; flex-shrink: 0; }
@@ -581,6 +581,9 @@
             </a>
             <a class="nav-item-link nav-sub-item" href="{{ route('tickets.index',['type'=>'change_request']) }}">
                 <i class="bi bi-arrow-repeat nav-icon" style="font-size:.85rem"></i><span class="nav-text">Change Request</span>
+            </a>
+            <a class="nav-item-link nav-sub-item" href="{{ route('tickets.index',['submitted'=>1]) }}">
+                <i class="bi bi-send nav-icon" style="font-size:.85rem"></i><span class="nav-text">Submitted Requests</span>
             </a>
         </div>
 

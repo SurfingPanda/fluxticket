@@ -142,14 +142,17 @@ Route::middleware('auth')->group(function () {
             'change_request'  => 'Change Request',
         ];
         $typeFilter = $type ? ($typeMap[$type] ?? $type) : null;
+        $submitted  = request()->boolean('submitted');
         $tickets   = \App\Models\Ticket::with(['user', 'notes.user', 'knowledgeArticles'])
-            ->where(function ($q) use ($user) {
-                $q->where('user_id', $user->id)
-                  ->orWhere('assignee', $user->name);
-                if ($user->department) {
-                    $q->orWhere('department', $user->department);
-                }
-            })
+            ->when($submitted, fn($q) => $q->where('user_id', $user->id),
+                fn($q) => $q->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhere('assignee', $user->name);
+                    if ($user->department) {
+                        $q->orWhere('department', $user->department);
+                    }
+                })
+            )
             ->when($typeFilter, fn($q) => $q->where('type', $typeFilter))
             ->latest()
             ->get();

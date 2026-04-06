@@ -229,6 +229,9 @@
             <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&request('type')==='change_request'?'active':'' }}" href="{{ route('tickets.index',['type'=>'change_request']) }}">
                 <i class="bi bi-arrow-repeat nav-icon" style="font-size:.85rem"></i><span class="nav-text">Change Request</span>
             </a>
+            <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&request('submitted')?'active':'' }}" href="{{ route('tickets.index',['submitted'=>1]) }}">
+                <i class="bi bi-send nav-icon" style="font-size:.85rem"></i><span class="nav-text">Submitted Requests</span>
+            </a>
         </div>
 
         @php
