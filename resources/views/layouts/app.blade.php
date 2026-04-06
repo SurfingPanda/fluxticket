@@ -236,7 +236,7 @@
 
         @php
         $_isSA  = auth()->check() && auth()->user()->role === 'super_admin';
-        $_perm  = $_isSA ? [] : \App\Models\SystemSetting::agentPageAccess();
+        $_perm  = $_isSA ? [] : auth()->user()->effectivePageAccess();
         @endphp
         <div class="sidebar-section-label">Manage</div>
         @if($_isSA || ($_perm['agents'] ?? true))
@@ -409,7 +409,11 @@ $_deptUsers = \App\Models\User::whereNotNull('department')
                 <div class="m-field">
                     <label class="m-label">Assign To <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:.7rem">(optional)</span></label>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
-                        @php $deptList=['IT','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store']; @endphp
+                        @php
+                        $deptList = auth()->user()->isSuperAdmin()
+                            ? \App\Models\SystemSetting::allDepartments()
+                            : auth()->user()->effectiveRoutingDepts();
+                        @endphp
                         <select class="m-select" id="nt-dept" onchange="loadAssignDeptUsers(this.value,'nt-assignee')">
                             <option value="" selected>— Department —</option>
                             @foreach($deptList as $d)<option value="{{ $d }}">{{ $d }}</option>@endforeach

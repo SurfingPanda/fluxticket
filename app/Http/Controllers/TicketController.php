@@ -41,7 +41,7 @@ class TicketController extends Controller
             'priority'    => ['required', 'in:low,medium,high'],
             'assignee'    => ['nullable', 'string'],
             'description' => ['required', 'string'],
-            'attachment'  => ['nullable', 'file', 'max:10240'],
+            'attachment'  => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png,gif,webp'],
         ]);
 
         $path = null;
@@ -85,7 +85,7 @@ class TicketController extends Controller
             'priority'         => ['required', 'in:low,medium,high'],
             'assignee'         => ['nullable', 'string', 'max:255'],
             'resolution'       => ['nullable', 'string'],
-            'resolution_image' => ['nullable', 'image', 'max:10240'],
+            'resolution_image' => ['nullable', 'image', 'max:5120', 'mimes:jpg,jpeg,png,gif,webp'],
         ]);
 
         $oldStatus   = $ticket->status;
@@ -197,6 +197,9 @@ class TicketController extends Controller
         if ($routedUser) {
             $this->notify($routedUser->id, 'routed', $ticket,
                 "Ticket {$ticket->ticket_number} has been assigned to you ({$data['department']}): \"{$ticket->subject}\"");
+            if ($routedUser->email) {
+                try { Mail::to($routedUser->email)->send(new TicketAssignedMail($ticket)); } catch (\Exception $e) { \Log::warning('Mail failed: '.$e->getMessage()); }
+            }
         }
 
         // Notify the ticket submitter

@@ -32,6 +32,7 @@
         animation:apIn .18s ease;
     }
     @keyframes apIn { from { opacity:0;transform:scale(.94) translateY(10px); } to { opacity:1;transform:none; } }
+    @keyframes createAgentSpin { to { transform:rotate(360deg); } }
     .ap-header {
         display:flex;align-items:center;gap:1rem;padding:1.4rem 1.4rem 1rem;
         border-bottom:1px solid var(--border);
@@ -234,8 +235,9 @@
             </div>
             <div style="display:flex;align-items:center;justify-content:flex-end;gap:.6rem;padding:.9rem 1.4rem;border-top:1px solid var(--border)">
                 <button type="button" onclick="closeNewAgentModal()" style="background:transparent;border:1px solid var(--border);border-radius:.5rem;color:var(--muted);padding:.35rem .9rem;font-size:.78rem;cursor:pointer">Cancel</button>
-                <button type="submit" style="display:inline-flex;align-items:center;gap:.4rem;background:#6366f1;color:#fff;border:none;border-radius:.5rem;padding:.4rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer">
-                    <i class="bi bi-person-check-fill"></i> Create Agent
+                <button type="submit" id="createAgentBtn" style="display:inline-flex;align-items:center;gap:.4rem;background:#6366f1;color:#fff;border:none;border-radius:.5rem;padding:.4rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer">
+                    <i class="bi bi-person-check-fill" id="createAgentIcon"></i>
+                    <span id="createAgentText">Create Agent</span>
                 </button>
             </div>
         </form>
@@ -355,7 +357,36 @@
     function closeNewAgentModal() {
         document.getElementById('newAgentModal').classList.remove('open');
         document.body.style.overflow = '';
+        // reset button in case form had errors and modal is reopened
+        const btn  = document.getElementById('createAgentBtn');
+        const icon = document.getElementById('createAgentIcon');
+        const text = document.getElementById('createAgentText');
+        if (btn) {
+            btn.disabled      = false;
+            btn.style.opacity = '';
+            btn.style.cursor  = '';
+            icon.className    = 'bi bi-person-check-fill';
+            icon.innerHTML    = '';
+            text.textContent  = 'Create Agent';
+        }
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('#newAgentModal form');
+        if (form) {
+            form.addEventListener('submit', function () {
+                const btn  = document.getElementById('createAgentBtn');
+                const icon = document.getElementById('createAgentIcon');
+                const text = document.getElementById('createAgentText');
+                btn.disabled      = true;
+                btn.style.opacity = '.75';
+                btn.style.cursor  = 'not-allowed';
+                icon.className    = '';
+                icon.innerHTML    = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:createAgentSpin .7s linear infinite;display:inline-block"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+                text.textContent  = 'Creating…';
+            });
+        }
+    });
 
     function openAgentModal(a) {
         // Avatar

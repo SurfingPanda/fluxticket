@@ -36,14 +36,22 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
         'password' => ['required'],
     ]);
 
+    // Rate limit: 5 attempts per minute per IP
+    $key = 'login.' . $request->ip();
+    if (\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($key, 5)) {
+        $seconds = \Illuminate\Support\Facades\RateLimiter::availableIn($key);
+        return back()->withErrors(['email' => "Too many login attempts. Please try again in {$seconds} seconds."])->onlyInput('email');
+    }
+
     $login    = trim($request->input('email'));
     $password = $request->input('password');
 
     // Determine if the input looks like an email
     $isEmail = filter_var($login, FILTER_VALIDATE_EMAIL);
 
+    $invalidMsg = ['email' => 'Invalid credentials. Please try again.'];
+
     if ($isEmail) {
-        // Try email login
         $attempted = \Illuminate\Support\Facades\Auth::attempt(
             ['email' => $login, 'password' => $password],
             $request->boolean('remember')
@@ -52,44 +60,34 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
             if (! auth()->user()->is_active) {
                 \Illuminate\Support\Facades\Auth::logout();
                 $request->session()->invalidate();
-                return back()->withErrors([
-                    'email' => 'Your account has been disabled. Please contact your administrator.',
-                ])->onlyInput('email');
+                return back()->withErrors(['email' => 'Your account has been disabled. Please contact your administrator.'])->onlyInput('email');
             }
+            \Illuminate\Support\Facades\RateLimiter::clear('login.' . $request->ip());
             $request->session()->regenerate();
             return redirect()->intended(route('dashboard'));
         }
-        return back()->withErrors([
-            'email' => 'The email address or password is incorrect.',
-        ])->onlyInput('email');
+        \Illuminate\Support\Facades\RateLimiter::hit('login.' . $request->ip());
+        return back()->withErrors($invalidMsg)->onlyInput('email');
     }
 
-    // Username login — check if any user has this username set
+    // Username login
     $user = \App\Models\User::where('username', $login)->first();
 
-    if (! $user) {
-        return back()->withErrors([
-            'email' => 'Username does not exist.',
-        ])->onlyInput('email');
-    }
-
-    if (! \Illuminate\Support\Facades\Auth::attempt(
+    if (! $user || ! \Illuminate\Support\Facades\Auth::attempt(
         ['email' => $user->email, 'password' => $password],
         $request->boolean('remember')
     )) {
-        return back()->withErrors([
-            'email' => 'The password is incorrect.',
-        ])->onlyInput('email');
+        \Illuminate\Support\Facades\RateLimiter::hit('login.' . $request->ip());
+        return back()->withErrors($invalidMsg)->onlyInput('email');
     }
 
     if (! auth()->user()->is_active) {
         \Illuminate\Support\Facades\Auth::logout();
         $request->session()->invalidate();
-        return back()->withErrors([
-            'email' => 'Your account has been disabled. Please contact your administrator.',
-        ])->onlyInput('email');
+        return back()->withErrors(['email' => 'Your account has been disabled. Please contact your administrator.'])->onlyInput('email');
     }
 
+    \Illuminate\Support\Facades\RateLimiter::clear('login.' . $request->ip());
     $request->session()->regenerate();
     return redirect()->intended(route('dashboard'));
 })->name('login.post');
@@ -123,7 +121,7 @@ Route::middleware('auth')->group(function () {
             }
         })->pluck('id');
 
-        $recentActivity = \App\Models\TicketNote::with(['ticket', 'user'])
+        $recentActivity = \App\Models\TicketNote::with(['ticket.user', 'user'])
             ->whereIn('ticket_id', $relatedTicketIds)
             ->latest()
             ->take(20)
@@ -166,6 +164,12 @@ Route::middleware('auth')->group(function () {
         if (request('open')) {
             $openTicket = \App\Models\Ticket::with(['user', 'notes.user', 'knowledgeArticles'])
                 ->find((int) request('open'));
+            if ($openTicket && ! $user->isSuperAdmin()
+                && $openTicket->user_id !== $user->id
+                && $openTicket->assignee !== $user->name
+                && $openTicket->department !== $user->department) {
+                $openTicket = null;
+            }
         }
         $allowedDepts = auth()->user()->isSuperAdmin()
             ? \App\Models\SystemSetting::allDepartments()
@@ -173,11 +177,16 @@ Route::middleware('auth')->group(function () {
         return view('tickets.index', compact('tickets', 'deptUsers', 'type', 'allKbas', 'openTicket', 'allowedDepts'));
     })->name('tickets.index');
 
-    // Global ticket search (all tickets, no ownership filter)
     Route::get('/tickets/search', function () {
-        $q = trim(request('q', ''));
+        $q    = trim(request('q', ''));
+        $user = auth()->user();
         if (strlen($q) < 1) return response()->json([]);
         $tickets = \App\Models\Ticket::with('user')
+            ->when(! $user->isSuperAdmin(), fn($query) => $query->where(function ($sub) use ($user) {
+                $sub->where('user_id', $user->id)
+                    ->orWhere('assignee', $user->name);
+                if ($user->department) $sub->orWhere('department', $user->department);
+            }))
             ->where(function ($query) use ($q) {
                 $query->where('ticket_number', 'like', "%{$q}%")
                       ->orWhere('subject', 'like', "%{$q}%")
@@ -241,7 +250,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/agents', function () {
         if (!auth()->user()->isSuperAdmin()) {
             $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['agents'] ?? true), 403, 'Access restricted by administrator.');
+            abort_if(!($p['agents'] ?? false), 403, 'Access restricted by administrator.');
         }
         $ticketCounts = \App\Models\Ticket::selectRaw('assignee, status, count(*) as count')
             ->groupBy('assignee','status')->get()->groupBy('assignee');
@@ -272,68 +281,78 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports', function () {
         if (!auth()->user()->isSuperAdmin()) {
             $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['reports'] ?? true), 403, 'Access restricted by administrator.');
+            abort_if(!($p['reports'] ?? false), 403, 'Access restricted by administrator.');
         }
-        $allTickets = \App\Models\Ticket::all();
         $now        = now();
         $weekStart  = $now->copy()->startOfWeek();
         $monthStart = $now->copy()->startOfMonth();
 
-        // SLA statuses
-        $sla = ['met'=>0,'ok'=>0,'warning'=>0,'breached'=>0];
-        foreach ($allTickets as $t) { $sla[$t->sla_status]++; }
+        // All counts via DB aggregation — no full table load
+        $statusCounts = \App\Models\Ticket::selectRaw('status, count(*) as cnt')->groupBy('status')->pluck('cnt','status');
+        $total        = $statusCounts->sum();
 
-        // Resolution time helpers
-        $resolvedTickets = $allTickets->whereIn('status',['resolved','closed'])->filter(fn($t) => $t->resolved_at);
+        // Resolution time: only load resolved/closed tickets with timestamps
+        $resolvedTickets = \App\Models\Ticket::select('priority','created_at','resolved_at')
+            ->whereIn('status',['resolved','closed'])->whereNotNull('resolved_at')->get();
         $avgResHrs = $resolvedTickets->count()
             ? round($resolvedTickets->avg(fn($t) => $t->created_at->diffInMinutes($t->resolved_at)) / 60, 1)
             : null;
-
         $avgResByPriority = [];
-        foreach (['high','medium','low'] as $p) {
-            $pts = $resolvedTickets->where('priority',$p);
-            $avgResByPriority[$p] = $pts->count()
+        foreach (['high','medium','low'] as $pri) {
+            $pts = $resolvedTickets->where('priority', $pri);
+            $avgResByPriority[$pri] = $pts->count()
                 ? round($pts->avg(fn($t) => $t->created_at->diffInMinutes($t->resolved_at)) / 60, 1)
                 : null;
         }
 
-        // Agent performance
+        // SLA: only load sla_due_at + status columns
+        $slaTickets = \App\Models\Ticket::select('status','priority','sla_due_at','created_at','resolved_at')
+            ->whereNotNull('sla_due_at')->get();
+        $sla = ['met'=>0,'ok'=>0,'warning'=>0,'breached'=>0];
+        foreach ($slaTickets as $t) { $sla[$t->sla_status]++; }
+        $slaTotal = $slaTickets->count();
+
+        // Agent performance via DB aggregation
         $ticketCountsRaw = \App\Models\Ticket::selectRaw('assignee, status, count(*) as cnt')
             ->whereNotNull('assignee')->groupBy('assignee','status')->get()->groupBy('assignee');
-
-        $agentPerf = \App\Models\User::whereNotNull('department')->orderBy('name')->get()
-            ->map(function($user) use ($ticketCountsRaw, $allTickets) {
+        $agentAvgHrs = \App\Models\Ticket::selectRaw('assignee, avg(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) as avg_min')
+            ->whereIn('status',['resolved','closed'])->whereNotNull('resolved_at')->whereNotNull('assignee')
+            ->groupBy('assignee')->pluck('avg_min','assignee');
+        $agentPerf = \App\Models\User::whereNotNull('department')->orderBy('name')
+            ->get(['name','department'])
+            ->map(function($user) use ($ticketCountsRaw, $agentAvgHrs) {
                 $rows     = $ticketCountsRaw->get($user->name, collect());
                 $total    = $rows->sum('cnt');
+                if (! $total) return null;
                 $resolved = $rows->whereIn('status',['resolved','closed'])->sum('cnt');
                 $open     = $rows->whereIn('status',['open','progress'])->sum('cnt');
-                $agRes    = $allTickets->where('assignee',$user->name)->whereIn('status',['resolved','closed'])->filter(fn($t)=>$t->resolved_at);
-                $avgHrs   = $agRes->count() ? round($agRes->avg(fn($t)=>$t->created_at->diffInMinutes($t->resolved_at))/60,1) : null;
-                return (object)['name'=>$user->name,'dept'=>$user->department,'total'=>$total,'resolved'=>$resolved,'open'=>$open,'rate'=>$total>0?round($resolved/$total*100):0,'avg_hrs'=>$avgHrs];
-            })->filter(fn($a)=>$a->total>0)->sortByDesc('total')->take(20);
+                $avgMin   = $agentAvgHrs->get($user->name);
+                return (object)['name'=>$user->name,'dept'=>$user->department,'total'=>$total,'resolved'=>$resolved,'open'=>$open,'rate'=>round($resolved/$total*100),'avg_hrs'=>$avgMin ? round($avgMin/60,1) : null];
+            })->filter()->sortByDesc('total')->take(20);
 
-        $slaTotal = $allTickets->whereNotNull('sla_due_at')->count();
+        $resolvedThisMonth = \App\Models\Ticket::whereIn('status',['resolved','closed'])
+            ->whereNotNull('resolved_at')->where('resolved_at','>=',$monthStart)->count();
 
         $stats = [
-            'total'              => $allTickets->count(),
-            'open'               => $allTickets->where('status','open')->count(),
-            'progress'           => $allTickets->where('status','progress')->count(),
-            'resolved'           => $allTickets->where('status','resolved')->count(),
-            'closed'             => $allTickets->where('status','closed')->count(),
-            'this_week'          => $allTickets->where('created_at','>=',$weekStart)->count(),
-            'this_month'         => $allTickets->where('created_at','>=',$monthStart)->count(),
-            'resolved_this_month'=> $resolvedTickets->filter(fn($t)=>$t->resolved_at->gte($monthStart))->count(),
-            'resolution_rate'    => $allTickets->count() ? round($resolvedTickets->count()/$allTickets->count()*100) : 0,
-            'avg_res_hrs'        => $avgResHrs,
-            'avg_res_by_priority'=> $avgResByPriority,
-            'sla'                => $sla,
-            'sla_compliance'     => $slaTotal ? round(($sla['met']/$slaTotal)*100) : 0,
-            'sla_breach_rate'    => $slaTotal ? round(($sla['breached']/$slaTotal)*100) : 0,
-            'breached'           => $sla['breached'],
-            'by_priority'        => ['high'=>$allTickets->where('priority','high')->count(),'medium'=>$allTickets->where('priority','medium')->count(),'low'=>$allTickets->where('priority','low')->count()],
-            'by_category'        => \App\Models\Ticket::selectRaw('category, count(*) as count')->groupBy('category')->orderByDesc('count')->get(),
-            'by_department'      => \App\Models\Ticket::selectRaw('department, count(*) as count')->whereNotNull('department')->groupBy('department')->orderByDesc('count')->get(),
-            'agent_perf'         => $agentPerf,
+            'total'               => $total,
+            'open'                => $statusCounts->get('open', 0),
+            'progress'            => $statusCounts->get('progress', 0),
+            'resolved'            => $statusCounts->get('resolved', 0),
+            'closed'              => $statusCounts->get('closed', 0),
+            'this_week'           => \App\Models\Ticket::where('created_at','>=',$weekStart)->count(),
+            'this_month'          => \App\Models\Ticket::where('created_at','>=',$monthStart)->count(),
+            'resolved_this_month' => $resolvedThisMonth,
+            'resolution_rate'     => $total ? round($resolvedTickets->count()/$total*100) : 0,
+            'avg_res_hrs'         => $avgResHrs,
+            'avg_res_by_priority' => $avgResByPriority,
+            'sla'                 => $sla,
+            'sla_compliance'      => $slaTotal ? round(($sla['met']/$slaTotal)*100) : 0,
+            'sla_breach_rate'     => $slaTotal ? round(($sla['breached']/$slaTotal)*100) : 0,
+            'breached'            => $sla['breached'],
+            'by_priority'         => \App\Models\Ticket::selectRaw('priority, count(*) as cnt')->groupBy('priority')->pluck('cnt','priority'),
+            'by_category'         => \App\Models\Ticket::selectRaw('category, count(*) as count')->groupBy('category')->orderByDesc('count')->get(),
+            'by_department'       => \App\Models\Ticket::selectRaw('department, count(*) as count')->whereNotNull('department')->groupBy('department')->orderByDesc('count')->get(),
+            'agent_perf'          => $agentPerf,
         ];
 
         return view('reports.index', compact('stats') + ['activePage'=>'reports']);
@@ -364,7 +383,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/knowledge-base', function () {
         if (!auth()->user()->isSuperAdmin()) {
             $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['knowledge_read'] ?? true), 403, 'Access restricted by administrator.');
+            abort_if(!($p['knowledge_read'] ?? false), 403, 'Access restricted by administrator.');
         }
         $articles = \App\Models\KnowledgeArticle::with(['user', 'tickets:id,ticket_number,subject'])
             ->withCount('tickets')
@@ -375,7 +394,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/knowledge-base', function (\Illuminate\Http\Request $request) {
         if (!auth()->user()->isSuperAdmin()) {
             $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['knowledge_write'] ?? true), 403, 'Access restricted by administrator.');
+            abort_if(!($p['knowledge_write'] ?? false), 403, 'Access restricted by administrator.');
         }
         $data = $request->validate([
             'title'    => ['required', 'string', 'max:255'],
@@ -488,13 +507,22 @@ Route::middleware('auth')->group(function () {
             \App\Models\SystemSetting::set('agent_routing_departments', array_values($selected));
             return back()->with('role_success', 'Allowed routing departments updated.');
         })->name('roles.settings.routing-departments');
+
+        Route::delete('/roles/{user}', function (\App\Models\User $user) {
+            if ($user->id === auth()->id()) {
+                return back()->with('role_error', 'You cannot delete your own account.');
+            }
+            $name = $user->name;
+            $user->delete();
+            return back()->with('role_success', "Account deleted for {$name}.");
+        })->name('roles.destroy');
     });
 
     // ── Settings ──
     Route::get('/settings', function () {
         if (!auth()->user()->isSuperAdmin()) {
             $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['settings'] ?? true), 403, 'Access restricted by administrator.');
+            abort_if(!($p['settings'] ?? false), 403, 'Access restricted by administrator.');
         }
         return view('settings.index', ['activePage'=>'settings']);
     })->name('settings.index');

@@ -61,6 +61,7 @@
     .rp-toast.success { background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#34d399; }
     .rp-toast.error   { background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:#f87171; }
     @keyframes rpSlideIn { from { opacity:0;transform:translateY(8px); } to { opacity:1;transform:translateY(0); } }
+    @keyframes deleteSpin { to { transform:rotate(360deg); } }
     .rp-self-badge { font-size:.65rem;background:rgba(99,102,241,.15);color:#818cf8;border-radius:9999px;padding:.1rem .45rem;font-weight:700;margin-left:.4rem; }
     .section-save-bar { display:flex;justify-content:flex-end;padding:.85rem 1.4rem;border-top:1px solid var(--border); }
 
@@ -232,6 +233,11 @@
                             @csrf
                             @method('PUT')
                         </form>
+                        {{-- Hidden form for delete --}}
+                        <form method="POST" id="deleteForm_{{ $user->id }}" action="{{ route('roles.destroy', $user) }}" style="display:none">
+                            @csrf
+                            @method('DELETE')
+                        </form>
                         @if($user->is_active)
                         <button type="button"
                             onclick="openToggleModal({{ $user->id }}, {{ json_encode($user->name) }}, 'disable')"
@@ -258,6 +264,12 @@
                             <i class="bi bi-sliders"></i> Access
                         </button>
                         @endif
+                        <button type="button"
+                            onclick="openDeleteModal({{ $user->id }}, {{ json_encode($user->name) }})"
+                            style="display:inline-flex;align-items:center;gap:.3rem;background:transparent;border:1px solid rgba(248,113,113,.35);border-radius:.5rem;padding:.3rem .65rem;font-size:.75rem;font-weight:500;color:#f87171;cursor:pointer;transition:background .15s,border-color .15s"
+                            onmouseover="this.style.background='rgba(248,113,113,.1)'" onmouseout="this.style.background='transparent'">
+                            <i class="bi bi-trash3"></i> Delete
+                        </button>
                     </div>
                     @endif
                 </td>
@@ -335,6 +347,36 @@
     </div>
 </div>
 
+{{-- ── Delete User Confirmation Modal ── --}}
+<div class="access-modal-backdrop" id="deleteModalBackdrop" style="display:none" onclick="if(event.target===this)closeDeleteModal()">
+    <div class="access-modal" style="max-width:420px">
+        <div class="access-modal-header">
+            <div style="display:flex;align-items:center;gap:.75rem">
+                <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;background:rgba(248,113,113,.15);color:#f87171">
+                    <i class="bi bi-trash3"></i>
+                </div>
+                <h4 id="deleteModalTitle" style="margin:0;font-size:.9rem;font-weight:700;color:var(--text)"></h4>
+            </div>
+            <button class="modal-close" onclick="closeDeleteModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div style="padding:1.25rem 1.4rem">
+            <p id="deleteModalBody" style="font-size:.85rem;color:var(--muted);margin:0;line-height:1.6"></p>
+            <div style="margin-top:.85rem;padding:.75rem 1rem;background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.2);border-radius:.6rem;font-size:.78rem;color:#f87171">
+                <i class="bi bi-exclamation-triangle-fill" style="margin-right:.35rem"></i>
+                This action is permanent and cannot be undone.
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:.6rem;padding:.9rem 1.4rem;border-top:1px solid var(--border)">
+            <button onclick="closeDeleteModal()" style="background:transparent;border:1px solid var(--border);border-radius:.5rem;color:var(--muted);padding:.38rem .9rem;font-size:.78rem;cursor:pointer">Cancel</button>
+            <button id="deleteConfirmBtn" onclick="submitDelete()"
+                style="display:inline-flex;align-items:center;gap:.4rem;border:none;border-radius:.5rem;padding:.4rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer;color:#fff;background:#ef4444">
+                <i class="bi bi-trash3" id="deleteConfirmIcon"></i>
+                <span id="deleteConfirmText">Yes, Delete Account</span>
+            </button>
+        </div>
+    </div>
+</div>
+
 {{-- ── Per-Agent Access Modal ── --}}
 <div class="access-modal-backdrop" id="accessModalBackdrop" style="display:none" onclick="if(event.target===this)closeAccessModal()">
     <div class="access-modal">
@@ -391,7 +433,10 @@
                 </button>
                 <div style="display:flex;gap:.5rem">
                     <button type="button" class="btn-reset-access" onclick="closeAccessModal()">Cancel</button>
-                    <button type="submit" class="btn-save-settings"><i class="bi bi-check-lg"></i> Save Access</button>
+                    <button type="submit" id="saveAccessBtn" class="btn-save-settings">
+                        <i class="bi bi-check-lg" id="saveAccessIcon"></i>
+                        <span id="saveAccessText">Save Access</span>
+                    </button>
                 </div>
             </div>
         </form>
@@ -439,8 +484,49 @@ function submitToggle() {
 }
 
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeToggleModal();
+    if (e.key === 'Escape') { closeToggleModal(); closeDeleteModal(); }
 });
+
+let _deleteUserId = null;
+
+function openDeleteModal(userId, userName) {
+    _deleteUserId = userId;
+    document.getElementById('deleteModalTitle').textContent = `Delete ${userName}`;
+    document.getElementById('deleteModalBody').textContent  = `Are you sure you want to permanently delete ${userName}'s account? All associated data will be removed.`;
+    const backdrop = document.getElementById('deleteModalBackdrop');
+    if (backdrop.parentElement !== document.body) document.body.appendChild(backdrop);
+    backdrop.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModalBackdrop').style.display = 'none';
+    document.body.style.overflow = '';
+    _deleteUserId = null;
+    const btn  = document.getElementById('deleteConfirmBtn');
+    const icon = document.getElementById('deleteConfirmIcon');
+    const text = document.getElementById('deleteConfirmText');
+    btn.disabled      = false;
+    btn.style.opacity = '';
+    btn.style.cursor  = '';
+    icon.className    = 'bi bi-trash3';
+    icon.innerHTML    = '';
+    text.textContent  = 'Yes, Delete Account';
+}
+
+function submitDelete() {
+    if (!_deleteUserId) return;
+    const btn  = document.getElementById('deleteConfirmBtn');
+    const icon = document.getElementById('deleteConfirmIcon');
+    const text = document.getElementById('deleteConfirmText');
+    btn.disabled    = true;
+    btn.style.opacity = '.75';
+    btn.style.cursor  = 'not-allowed';
+    icon.className  = '';
+    icon.innerHTML  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:deleteSpin .7s linear infinite;display:inline-block"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+    text.textContent = 'Deleting…';
+    document.getElementById('deleteForm_' + _deleteUserId).submit();
+}
 
 const allDepts   = @json(\App\Models\SystemSetting::allDepartments());
 const pageKeys   = ['agents','reports','knowledge_read','knowledge_write','settings'];
@@ -487,7 +573,28 @@ function openAccessModal(btn) {
 function closeAccessModal() {
     document.getElementById('accessModalBackdrop').style.display = 'none';
     document.body.style.overflow = '';
+    const btn  = document.getElementById('saveAccessBtn');
+    const icon = document.getElementById('saveAccessIcon');
+    const text = document.getElementById('saveAccessText');
+    btn.disabled      = false;
+    btn.style.opacity = '';
+    btn.style.cursor  = '';
+    icon.className    = 'bi bi-check-lg';
+    icon.innerHTML    = '';
+    text.textContent  = 'Save Access';
 }
+
+document.getElementById('accessModalForm').addEventListener('submit', function () {
+    const btn  = document.getElementById('saveAccessBtn');
+    const icon = document.getElementById('saveAccessIcon');
+    const text = document.getElementById('saveAccessText');
+    btn.disabled      = true;
+    btn.style.opacity = '.75';
+    btn.style.cursor  = 'not-allowed';
+    icon.className    = '';
+    icon.innerHTML    = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:deleteSpin .7s linear infinite;display:inline-block"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+    text.textContent  = 'Saving…';
+});
 
 function resetAccessToGlobal() {
     // Reset to global defaults from SystemSetting

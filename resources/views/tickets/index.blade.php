@@ -1543,7 +1543,11 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
                 <div class="m-field">
                     <label class="m-label">Assign To <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:.7rem">(optional)</span></label>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
-                        @php $deptList=['IT','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store']; @endphp
+                        @php
+                        $deptList = auth()->user()->isSuperAdmin()
+                            ? \App\Models\SystemSetting::allDepartments()
+                            : auth()->user()->effectiveRoutingDepts();
+                        @endphp
                         <select class="m-select" id="nt-dept" onchange="loadAssignDeptUsers(this.value,'nt-assignee')">
                             <option value="" selected>— Department —</option>
                             @foreach($deptList as $d)<option value="{{ $d }}">{{ $d }}</option>@endforeach
