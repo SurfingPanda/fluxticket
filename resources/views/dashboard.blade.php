@@ -61,11 +61,10 @@
             min-height: 52px; flex-shrink: 0;
         }
         .brand-icon {
-            width: 36px; height: 36px; min-width: 36px; flex-shrink: 0;
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            border-radius: .6rem;
+            width: 40px; height: 40px; min-width: 40px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
         }
+        .brand-icon img { width:40px; height:40px; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(180,20,40,.45)); }
         .brand-name {
             font-size: 1rem; font-weight: 700;
             color: var(--text);
@@ -546,13 +545,7 @@
     {{-- Brand --}}
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-                <rect x="1" y="6" width="26" height="16" rx="3" stroke="white" stroke-width="1.8"/>
-                <circle cx="1" cy="14" r="3" fill="rgba(0,0,0,0)" stroke="white" stroke-width="1.8"/>
-                <circle cx="27" cy="14" r="3" fill="rgba(0,0,0,0)" stroke="white" stroke-width="1.8"/>
-                <line x1="9" y1="6" x2="9" y2="22" stroke="white" stroke-width="1.4" stroke-dasharray="2.5 2"/>
-                <path d="M16 8.5L12.5 14.5H15.5L13 19.5L19 12.5H15.5L18 8.5Z" fill="white"/>
-            </svg>
+            <img src="{{ asset('image/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo">
         </div>
         <span class="brand-name">FluxTickets</span>
         <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar"><i class="bi bi-layout-sidebar-reverse"></i></button>

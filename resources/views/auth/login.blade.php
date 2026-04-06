@@ -294,21 +294,7 @@
                 <div style="position:relative;z-index:1">
                     {{-- Logo --}}
                     <div class="d-flex align-items-center gap-3 mb-4">
-                        {{-- Custom FluxTickets icon: ticket shape + lightning bolt --}}
-                        <div style="width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:.875rem;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);flex-shrink:0">
-                            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <!-- ticket body -->
-                                <rect x="1" y="6" width="26" height="16" rx="3" stroke="white" stroke-width="1.8"/>
-                                <!-- left notch -->
-                                <circle cx="1" cy="14" r="3" fill="rgba(255,255,255,0)" stroke="white" stroke-width="1.8"/>
-                                <!-- right notch -->
-                                <circle cx="27" cy="14" r="3" fill="rgba(255,255,255,0)" stroke="white" stroke-width="1.8"/>
-                                <!-- perforated line -->
-                                <line x1="9" y1="6" x2="9" y2="22" stroke="white" stroke-width="1.4" stroke-dasharray="2.5 2"/>
-                                <!-- lightning bolt -->
-                                <path d="M16 8.5L12.5 14.5H15.5L13 19.5L19 12.5H15.5L18 8.5Z" fill="white"/>
-                            </svg>
-                        </div>
+                        <img src="{{ asset('image/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo" style="width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 3px 10px rgba(180,20,40,.55)) brightness(1.1)">
                         <span class="text-white fw-bold" style="font-size:1.35rem;letter-spacing:-.01em">FluxTickets</span>
                     </div>
 

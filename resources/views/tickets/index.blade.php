@@ -26,7 +26,8 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
         /* Sidebar */
         .sidebar { width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; transition:width .25s ease, background .3s, border-color .3s; overflow:hidden; }
         .sidebar-brand { padding:.65rem 1rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:.65rem; min-height:52px; flex-shrink:0; }
-        .brand-icon { width:36px; height:36px; min-width:36px; background:linear-gradient(135deg,#4f46e5,#7c3aed); border-radius:.6rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .brand-icon { width:40px; height:40px; min-width:40px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .brand-icon img { width:40px; height:40px; object-fit:contain; filter:drop-shadow(0 2px 6px rgba(180,20,40,.45)); }
         .brand-name { font-size:1rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; transition:opacity .2s,max-width .25s; max-width:140px; }
         .sidebar-toggle { margin-left:auto; flex-shrink:0; background:transparent; border:1px solid var(--border); border-radius:.4rem; width:26px; height:26px; min-width:26px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-size:.8rem; transition:background .15s,color .15s; }
         .sidebar-toggle:hover { background:var(--surface2); color:var(--text); }
@@ -241,13 +242,7 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
 <aside class="sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <svg width="20" height="20" viewBox="0 0 28 28" fill="none">
-                <rect x="1" y="6" width="26" height="16" rx="3" stroke="white" stroke-width="1.8"/>
-                <circle cx="1" cy="14" r="3" fill="rgba(0,0,0,0)" stroke="white" stroke-width="1.8"/>
-                <circle cx="27" cy="14" r="3" fill="rgba(0,0,0,0)" stroke="white" stroke-width="1.8"/>
-                <line x1="9" y1="6" x2="9" y2="22" stroke="white" stroke-width="1.4" stroke-dasharray="2.5 2"/>
-                <path d="M16 8.5L12.5 14.5H15.5L13 19.5L19 12.5H15.5L18 8.5Z" fill="white"/>
-            </svg>
+            <img src="{{ asset('image/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo">
         </div>
         <span class="brand-name">FluxTickets</span>
         <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar"><i class="bi bi-layout-sidebar-reverse"></i></button>

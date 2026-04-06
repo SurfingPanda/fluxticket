@@ -3,8 +3,32 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return auth()->check() ? redirect()->route('dashboard') : redirect()->route('login');
-});
+    if (auth()->check()) return redirect()->route('dashboard');
+    $tickets = \App\Models\Ticket::all();
+    $resolved = $tickets->whereIn('status', ['resolved', 'closed']);
+    $slaTotal = $tickets->whereNotNull('sla_due_at')->count();
+    $slaMet   = $tickets->where('sla_status', 'met')->count();
+    $landingStats = [
+        'total'       => $tickets->count(),
+        'open'        => $tickets->where('status', 'open')->count(),
+        'progress'    => $tickets->where('status', 'progress')->count(),
+        'resolved'    => $tickets->where('status', 'resolved')->count(),
+        'closed'      => $tickets->where('status', 'closed')->count(),
+        'high'        => $tickets->where('priority', 'high')->count(),
+        'medium'      => $tickets->where('priority', 'medium')->count(),
+        'low'         => $tickets->where('priority', 'low')->count(),
+        'res_rate'    => $tickets->count() ? round($resolved->count() / $tickets->count() * 100) : 0,
+        'sla_rate'    => $slaTotal ? round($slaMet / $slaTotal * 100) : 0,
+        'agents'      => \App\Models\User::where('role', 'agent')->count(),
+        'by_type'     => [
+            'Incident'       => $tickets->where('type', 'Incident')->count(),
+            'Service Request'=> $tickets->where('type', 'Service Request')->count(),
+            'Question'       => $tickets->where('type', 'Question')->count(),
+            'Change Request' => $tickets->where('type', 'Change Request')->count(),
+        ],
+    ];
+    return view('landing', compact('landingStats'));
+})->name('landing');
 
 Route::get('/login', function () {
     return view('auth.login');
