@@ -70,7 +70,7 @@ class TicketController extends Controller
                 $this->notify($assignee->id, 'assigned', $ticket,
                     "New ticket {$ticket->ticket_number} has been assigned to you: \"{$ticket->subject}\"");
                 if ($assignee->email) {
-                    Mail::to($assignee->email)->send(new TicketAssignedMail($ticket));
+                    try { Mail::to($assignee->email)->send(new TicketAssignedMail($ticket)); } catch (\Exception $e) { \Log::warning('Mail failed: '.$e->getMessage()); }
                 }
             }
         }
@@ -122,7 +122,7 @@ class TicketController extends Controller
                 "Your ticket {$ticket->ticket_number} status changed to \"{$label}\".");
             $submitter = \App\Models\User::find($ticket->user_id);
             if ($submitter?->email) {
-                Mail::to($submitter->email)->send(new TicketStatusUpdatedMail($ticket, $oldLabel, $label));
+                try { Mail::to($submitter->email)->send(new TicketStatusUpdatedMail($ticket, $oldLabel, $label)); } catch (\Exception $e) { \Log::warning('Mail failed: '.$e->getMessage()); }
             }
 
             // Log status change as an activity note
@@ -141,7 +141,7 @@ class TicketController extends Controller
                 $this->notify($assignee->id, 'assigned', $ticket,
                     "Ticket {$ticket->ticket_number} has been assigned to you: \"{$ticket->subject}\"");
                 if ($assignee->email) {
-                    Mail::to($assignee->email)->send(new TicketAssignedMail($ticket));
+                    try { Mail::to($assignee->email)->send(new TicketAssignedMail($ticket)); } catch (\Exception $e) { \Log::warning('Mail failed: '.$e->getMessage()); }
                 }
             }
         }
