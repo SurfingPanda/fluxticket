@@ -85,9 +85,18 @@ class Ticket extends Model
         return $this->belongsToMany(KnowledgeArticle::class, 'ticket_knowledge_article');
     }
 
-    public static function generateNumber(): string
+    public static function generateNumber(string $type = ''): string
     {
-        $last = static::max('id') ?? 0;
-        return '#FLX-' . str_pad($last + 1, 4, '0', STR_PAD_LEFT);
+        $prefixes = [
+            'Service Request' => 'SQR',
+            'Change Request'  => 'CRQ',
+            'Incident'        => 'ICT',
+            'Question'        => 'QTN',
+        ];
+
+        $prefix = $prefixes[$type] ?? 'FLX';
+        $last   = static::max('id') ?? 0;
+
+        return $prefix . '-' . str_pad($last + 1, 5, '0', STR_PAD_LEFT);
     }
 }

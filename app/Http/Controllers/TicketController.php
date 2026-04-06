@@ -47,7 +47,7 @@ class TicketController extends Controller
         }
 
         $ticket = \App\Models\Ticket::create([
-            'ticket_number' => \App\Models\Ticket::generateNumber(),
+            'ticket_number' => \App\Models\Ticket::generateNumber($data['type'] ?? ''),
             'user_id'       => auth()->id(),
             'subject'       => $data['subject'],
             'category'      => $data['category'],
