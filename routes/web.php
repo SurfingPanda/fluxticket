@@ -127,7 +127,7 @@ Route::middleware('auth')->group(function () {
             ->take(20)
             ->get();
 
-        return view('dashboard', compact('tickets', 'stats', 'deptUsers', 'recentActivity'));
+        return view('dashboard', compact('tickets', 'stats', 'deptUsers', 'recentActivity') + ['activePage' => 'dashboard']);
     })->name('dashboard');
 
     Route::get('/tickets', function () {
@@ -174,7 +174,7 @@ Route::middleware('auth')->group(function () {
         $allowedDepts = auth()->user()->isSuperAdmin()
             ? \App\Models\SystemSetting::allDepartments()
             : auth()->user()->effectiveRoutingDepts();
-        return view('tickets.index', compact('tickets', 'deptUsers', 'type', 'allKbas', 'openTicket', 'allowedDepts'));
+        return view('tickets.index', compact('tickets', 'deptUsers', 'type', 'allKbas', 'openTicket', 'allowedDepts') + ['activePage' => 'tickets']);
     })->name('tickets.index');
 
     Route::get('/tickets/search', function () {

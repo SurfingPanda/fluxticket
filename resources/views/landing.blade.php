@@ -39,6 +39,7 @@
         .nav-actions { display:flex; align-items:center; gap:.75rem; }
         .btn-login { background:linear-gradient(135deg,#4f46e5,#7c3aed); border:none; border-radius:.6rem; color:white; font-size:.875rem; font-weight:600; padding:.5rem 1.35rem; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:.4rem; transition:opacity .2s,transform .15s; box-shadow:0 3px 14px rgba(99,102,241,.4); }
         .btn-login:hover { opacity:.9; transform:translateY(-1px); color:white; }
+        @keyframes spin { to { transform:rotate(360deg); } }
         .dark-toggle { width:2.4rem; height:1.3rem; background:#6366f1; border-radius:9999px; position:relative; cursor:pointer; transition:background .3s; border:none; outline:none; flex-shrink:0; }
         .dark-toggle::after { content:''; position:absolute; top:2px; left:2px; width:.95rem; height:.95rem; background:white; border-radius:50%; transition:transform .3s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
         body:not(.dark) .dark-toggle { background:#cbd5e1; }
@@ -166,7 +167,11 @@
             <button class="dark-toggle" id="darkToggle" aria-label="Toggle dark mode"></button>
             <i class="bi bi-moon-stars" style="color:#818cf8;font-size:.8rem"></i>
         </div>
-        <a href="{{ route('login') }}" class="btn-login"><i class="bi bi-box-arrow-in-right"></i> Sign In</a>
+        <a href="{{ route('login') }}" class="btn-login" id="signInBtn" onclick="handleSignIn(event)">
+            <span id="signInIcon"><i class="bi bi-box-arrow-in-right"></i></span>
+            <span id="signInSpinner" style="display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0"></span>
+            <span id="signInText"> Sign In</span>
+        </a>
     </div>
 </nav>
 
@@ -574,6 +579,19 @@
         if (orb2) orb2.style.transform = `translateY(${-y * 0.12}px)`;
         if (orb3) orb3.style.transform = `translateY(${y * 0.08}px)`;
     }, { passive: true });
+
+    // ── Sign In loading state ──
+    function handleSignIn(e) {
+        const btn     = document.getElementById('signInBtn');
+        const icon    = document.getElementById('signInIcon');
+        const spinner = document.getElementById('signInSpinner');
+        const text    = document.getElementById('signInText');
+        icon.style.display    = 'none';
+        spinner.style.display = 'inline-block';
+        text.textContent      = ' Signing in…';
+        btn.style.opacity     = '.75';
+        btn.style.pointerEvents = 'none';
+    }
 </script>
 </body>
 </html>
