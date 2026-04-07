@@ -62,7 +62,7 @@
         .mini-signout { display:none; justify-content:center; align-items:center; padding:.4rem 0; }
 
         /* ── Layout ── */
-        .main-wrap { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; transition:margin-left .25s ease; overflow-x:hidden; }
+        .main-wrap { margin-left:60px; flex:1; display:flex; flex-direction:column; min-height:100vh; transition:margin-left .25s ease; overflow-x:hidden; }
         .main-wrap.mini { margin-left:60px; }
         .topbar { position:fixed; top:0; left:var(--sidebar-w); right:0; z-index:50; background:var(--surface); border-bottom:1px solid var(--border); padding:.75rem 1.25rem; display:flex; align-items:center; justify-content:space-between; gap:.75rem; transition:background .3s,border-color .3s; flex-shrink:0; }
         .content { padding:1.25rem; flex:1; padding-top:calc(1.25rem + 52px + 1rem); }
