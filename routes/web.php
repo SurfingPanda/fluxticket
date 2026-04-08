@@ -51,6 +51,42 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
 
     $invalidMsg = ['email' => 'Invalid credentials. Please try again.'];
 
+    // Helper: record a failed login attempt and check the 3-strike threshold
+    $recordFailedLogin = function (string $identifier, ?int $userId = null) use ($request) {
+        $cacheKey  = 'login_fails.' . md5(strtolower($identifier));
+        $fails     = \Illuminate\Support\Facades\Cache::get($cacheKey, 0) + 1;
+        \Illuminate\Support\Facades\Cache::put($cacheKey, $fails, now()->addMinutes(30));
+
+        try {
+            if ($fails >= 3) {
+                \App\Models\AuditLog::create([
+                    'user_id'       => $userId,
+                    'action'        => 'security.login_threshold',
+                    'subject_type'  => null,
+                    'subject_id'    => null,
+                    'subject_label' => $identifier,
+                    'old_values'    => null,
+                    'new_values'    => null,
+                    'ip_address'    => $request->ip(),
+                    'description'   => "Login failed {$fails} times for \"{$identifier}\" from IP {$request->ip()}.",
+                ]);
+                \Illuminate\Support\Facades\Cache::put($cacheKey, 0, now()->addMinutes(30));
+            } else {
+                \App\Models\AuditLog::create([
+                    'user_id'       => $userId,
+                    'action'        => 'security.login_failed',
+                    'subject_type'  => null,
+                    'subject_id'    => null,
+                    'subject_label' => $identifier,
+                    'old_values'    => null,
+                    'new_values'    => null,
+                    'ip_address'    => $request->ip(),
+                    'description'   => "Failed login attempt ({$fails}/3) for \"{$identifier}\".",
+                ]);
+            }
+        } catch (\Exception) {}
+    };
+
     if ($isEmail) {
         $attempted = \Illuminate\Support\Facades\Auth::attempt(
             ['email' => $login, 'password' => $password],
@@ -67,6 +103,8 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
             return redirect()->intended(route('dashboard'));
         }
         \Illuminate\Support\Facades\RateLimiter::hit('login.' . $request->ip());
+        $knownUser = \App\Models\User::where('email', $login)->first();
+        $recordFailedLogin($login, $knownUser?->id);
         return back()->withErrors($invalidMsg)->onlyInput('email');
     }
 
@@ -78,6 +116,7 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
         $request->boolean('remember')
     )) {
         \Illuminate\Support\Facades\RateLimiter::hit('login.' . $request->ip());
+        $recordFailedLogin($login, $user?->id);
         return back()->withErrors($invalidMsg)->onlyInput('email');
     }
 
@@ -606,13 +645,53 @@ Route::middleware('auth')->group(function () {
     })->name('integrations.index');
 
     // ── Audit Logs ──
-    Route::get('/audit-logs', function () {
+    Route::get('/audit-logs', function (\Illuminate\Http\Request $request) {
         if (!auth()->user()->isSuperAdmin()) {
             $p = auth()->user()->effectivePageAccess();
             abort_if(!($p['settings'] ?? false), 403, 'Access restricted by administrator.');
         }
         try {
-            $logs = \App\Models\AuditLog::with('user')->latest()->paginate(50);
+            // Auto-log newly breached SLA tickets
+            $breached = \App\Models\Ticket::whereNotIn('status', ['resolved', 'closed'])
+                ->whereNotNull('sla_due_at')
+                ->where('sla_due_at', '<', now())
+                ->get();
+            foreach ($breached as $ticket) {
+                $already = \App\Models\AuditLog::where('action', 'ticket.sla_breached')
+                    ->where('subject_id', $ticket->id)->exists();
+                if (!$already) {
+                    \App\Models\AuditLog::create([
+                        'user_id'       => null,
+                        'action'        => 'ticket.sla_breached',
+                        'subject_type'  => \App\Models\Ticket::class,
+                        'subject_id'    => $ticket->id,
+                        'subject_label' => $ticket->ticket_number,
+                        'old_values'    => null,
+                        'new_values'    => null,
+                        'ip_address'    => null,
+                        'description'   => "SLA breached for ticket {$ticket->ticket_number} (Priority: {$ticket->priority}, Due: {$ticket->sla_due_at->format('M d, Y h:i A')}).",
+                    ]);
+                }
+            }
+
+            // Build filtered query
+            $query = \App\Models\AuditLog::with('user')->latest();
+
+            if ($request->filled('action_filter')) {
+                $query->where('action', 'like', $request->action_filter . '%');
+            }
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+            if ($request->filled('user_filter')) {
+                $query->whereHas('user', fn($q) => $q->where('name', 'like', '%'.$request->user_filter.'%'))
+                      ->orWhere('subject_label', 'like', '%'.$request->user_filter.'%');
+            }
+
+            $logs = $query->paginate(50)->withQueryString();
         } catch (\Exception $e) {
             $logs = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
         }
