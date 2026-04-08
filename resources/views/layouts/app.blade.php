@@ -9,7 +9,73 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         :root { --bg:#0f172a; --surface:#1e293b; --surface2:#263348; --border:#334155; --text:#e2e8f0; --muted:#94a3b8; --accent:#6366f1; --sidebar-w:240px; }
-        body:not(.dark) { --bg:#e8edf6; --surface:#ffffff; --surface2:#f0f4fb; --border:#b8c6d8; --text:#0f172a; --muted:#475569; }
+        body:not(.dark) {
+            --bg:#eceef8;
+            --surface:#f5f6ff;
+            --surface2:#eaecf8;
+            --border:#c8cde8;
+            --text:#1a1f3c;
+            --muted:#5a6281;
+            --accent:#6366f1;
+        }
+        /* ── Light mode component polish ── */
+        body:not(.dark) .sidebar {
+            background:linear-gradient(175deg,#f0f1fb 0%,#e8eaf8 100%);
+            border-right:1px solid #d0d4ee;
+            box-shadow:2px 0 12px rgba(99,102,241,.06);
+        }
+        body:not(.dark) .topbar {
+            background:rgba(245,246,255,.92);
+            backdrop-filter:blur(12px);
+            border-bottom:1px solid #d0d4ee;
+            box-shadow:0 2px 12px rgba(99,102,241,.07);
+        }
+        body:not(.dark) .panel {
+            background:#ffffff;
+            border:1px solid #d0d4ee;
+            box-shadow:0 2px 10px rgba(99,102,241,.06);
+        }
+        body:not(.dark) .panel-header {
+            background:linear-gradient(135deg,rgba(99,102,241,.05),rgba(124,58,237,.03));
+            border-bottom:1px solid #d8dbf0;
+        }
+        body:not(.dark) .stat-card {
+            background:#ffffff;
+            border:1px solid #d0d4ee;
+            box-shadow:0 2px 10px rgba(99,102,241,.07);
+        }
+        body:not(.dark) .stat-card:hover {
+            box-shadow:0 8px 24px rgba(99,102,241,.13);
+            border-color:rgba(99,102,241,.35);
+        }
+        body:not(.dark) .nav-item-link.active {
+            background:rgba(99,102,241,.12);
+            color:#4f46e5;
+        }
+        body:not(.dark) .nav-item-link:hover {
+            background:rgba(99,102,241,.08);
+            color:#4f46e5;
+        }
+        body:not(.dark) .user-chip {
+            background:rgba(99,102,241,.08);
+            border:1px solid rgba(99,102,241,.15);
+        }
+        body:not(.dark) .m-input,
+        body:not(.dark) .m-select,
+        body:not(.dark) .m-textarea {
+            background:#ffffff;
+            border:1px solid #c8cde8;
+        }
+        body:not(.dark) .topbar-search {
+            background:#ffffff;
+            border:1px solid #c8cde8;
+        }
+        body:not(.dark) .flux-modal {
+            background:#ffffff;
+            box-shadow:0 30px 80px rgba(99,102,241,.18);
+        }
+        body:not(.dark) .brand-name { color:#4f46e5; }
+        body:not(.dark) ::-webkit-scrollbar-thumb { background:#c8cde8; }
         html,body { height:100%; margin:0; }
         body { font-family:'Segoe UI',system-ui,sans-serif; background:var(--bg); color:var(--text); display:flex; transition:background .3s,color .3s; }
 
