@@ -648,13 +648,39 @@ $_deptList = auth()->user()->isSuperAdmin()
     if (flash) setTimeout(() => { flash.style.opacity='0'; flash.style.transition='opacity .5s'; setTimeout(()=>flash.remove(),500); }, 3500);
 
     // ── Modal helpers (available on all pages) ──
-    function openModal(id)  { document.getElementById(id).classList.add('open');    document.body.style.overflow='hidden'; }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+    function openModal(id) {
+        document.getElementById(id).classList.add('open');
+        document.body.style.overflow = 'hidden';
+        if (id === 'newTicketModal') {
+            const rInput  = document.getElementById('t-requester');
+            const rId     = document.getElementById('t-requester-id');
+            const rDept   = document.getElementById('t-requester-dept');
+            // Only auto-fill if the field is empty (don't overwrite user edits)
+            if (rInput && !rInput.value && window._authUser) {
+                rInput.value = window._authUser.name;
+                rId.value    = window._authUser.id;
+                rDept.value  = window._authUser.department;
+            }
+        }
+    }
+    function closeModal(id) {
+        document.getElementById(id).classList.remove('open');
+        document.body.style.overflow = '';
+        if (id === 'newTicketModal') {
+            const rInput = document.getElementById('t-requester');
+            if (rInput) rInput.value = '';
+            const rId   = document.getElementById('t-requester-id');
+            if (rId)    rId.value   = '';
+            const rDept = document.getElementById('t-requester-dept');
+            if (rDept)  rDept.value = '';
+        }
+    }
     document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal('newTicketModal'); });
 
     // ── New Ticket modal helpers ──
-    window.deptUsers = @json($_deptUsers);
-    window.allUsers  = @json($_allUsers);
+    window.deptUsers   = @json($_deptUsers);
+    window.allUsers    = @json($_allUsers);
+    window._authUser   = @json(['id' => auth()->id(), 'name' => auth()->user()->name, 'department' => auth()->user()->department ?? '']);
 
     // Requester autocomplete
     function requesterSearch(val) {

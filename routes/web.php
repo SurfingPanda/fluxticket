@@ -586,6 +586,14 @@ Route::middleware('auth')->group(function () {
             $user->delete();
             return back()->with('role_success', "Account deleted for {$name}.");
         })->name('roles.destroy');
+
+        Route::put('/roles/{user}/reset-password', function (\App\Models\User $user) {
+            if ($user->id === auth()->id()) {
+                return back()->with('role_error', 'You cannot reset your own password this way.');
+            }
+            $user->update(['password' => \Illuminate\Support\Facades\Hash::make('Password@123')]);
+            return back()->with('role_success', "Password reset for {$user->name}. New password: Password@123")->withFragment('user-roles');
+        })->name('roles.reset-password');
     });
 
     // ── Integrations ──

@@ -23,6 +23,7 @@ class SettingsController extends Controller
             'email'             => ['required', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->ignore($user->id)],
             'department'        => ['nullable', 'string', 'max:150'],
             'profile_photo'     => ['nullable', 'image', 'max:2048'],
+            'remove_photo'      => ['nullable', 'in:0,1'],
         ]);
 
         if ($request->hasFile('profile_photo')) {
@@ -32,6 +33,11 @@ class SettingsController extends Controller
             }
             $data['profile_photo'] = $request->file('profile_photo')
                 ->store('profile-photos', 'public');
+        } elseif ($request->input('remove_photo') === '1') {
+            if ($user->profile_photo) {
+                Storage::disk('public')->delete($user->profile_photo);
+            }
+            $data['profile_photo'] = null;
         } else {
             unset($data['profile_photo']);
         }

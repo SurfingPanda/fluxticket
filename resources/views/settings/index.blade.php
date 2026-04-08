@@ -34,7 +34,7 @@
     box-shadow:0 4px 20px rgba(99,102,241,.25);
     position:relative;overflow:hidden;
 }
-.avatar-ring img { width:100%;height:100%;object-fit:cover;border-radius:50%; }
+.avatar-ring img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;display:block; }
 .avatar-overlay {
     position:absolute;inset:0;border-radius:50%;
     background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;
@@ -126,10 +126,10 @@
                     <label for="photoInput" class="avatar-wrap" title="Click to change photo">
                         <div class="avatar-ring" id="avatarRing">
                             @if($u->profile_photo)
-                                <img src="{{ asset('storage/' . $u->profile_photo) }}" id="avatarImg" alt="Avatar">
+                                <img src="{{ asset('storage/' . $u->profile_photo) }}" id="avatarImg" alt="Avatar" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">
                             @else
                                 <span id="avatarInitial">{{ strtoupper(substr($u->name, 0, 1)) }}</span>
-                                <img src="" id="avatarImg" alt="Avatar" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0;border-radius:50%">
+                                <img src="" id="avatarImg" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%">
                             @endif
                             <div class="avatar-overlay">
                                 <i class="bi bi-camera-fill" style="color:white;font-size:1.2rem"></i>
@@ -137,7 +137,21 @@
                         </div>
                         <input type="file" id="photoInput" name="profile_photo" accept="image/*" style="display:none" onchange="previewPhoto(this)">
                     </label>
+                    <input type="hidden" name="remove_photo" id="removePhotoInput" value="0">
                     <span style="font-size:.69rem;color:var(--muted);text-align:center;max-width:90px;line-height:1.35">Click photo to change</span>
+                    @if($u->profile_photo)
+                    <button type="button" id="removePhotoBtn" onclick="removePhoto()"
+                        style="display:inline-flex;align-items:center;gap:.3rem;background:transparent;border:1px solid rgba(248,113,113,.35);border-radius:.5rem;padding:.2rem .55rem;font-size:.69rem;font-weight:500;color:#f87171;cursor:pointer;transition:background .15s"
+                        onmouseover="this.style.background='rgba(248,113,113,.1)'" onmouseout="this.style.background='transparent'">
+                        <i class="bi bi-trash3"></i> Remove
+                    </button>
+                    @else
+                    <button type="button" id="removePhotoBtn" onclick="removePhoto()"
+                        style="display:none;align-items:center;gap:.3rem;background:transparent;border:1px solid rgba(248,113,113,.35);border-radius:.5rem;padding:.2rem .55rem;font-size:.69rem;font-weight:500;color:#f87171;cursor:pointer;transition:background .15s"
+                        onmouseover="this.style.background='rgba(248,113,113,.1)'" onmouseout="this.style.background='transparent'">
+                        <i class="bi bi-trash3"></i> Remove
+                    </button>
+                    @endif
                 </div>
 
                 {{-- Fields --}}
@@ -369,13 +383,45 @@ function previewPhoto(input) {
         const img     = document.getElementById('avatarImg');
         const initial = document.getElementById('avatarInitial');
         img.src = e.target.result;
-        img.style.display = '';
+        img.style.display = 'block';
         img.style.position = 'absolute';
         img.style.inset = '0';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
         img.style.borderRadius = '50%';
         if (initial) initial.style.display = 'none';
+        // Show remove button and clear any remove flag
+        document.getElementById('removePhotoInput').value = '0';
+        const btn = document.getElementById('removePhotoBtn');
+        btn.style.display = 'inline-flex';
     };
     reader.readAsDataURL(input.files[0]);
+}
+
+function removePhoto() {
+    const img     = document.getElementById('avatarImg');
+    const initial = document.getElementById('avatarInitial');
+    const input   = document.getElementById('photoInput');
+    // Clear the file input
+    input.value = '';
+    // Hide the image, show the initial
+    img.src = '';
+    img.style.display = 'none';
+    if (initial) {
+        initial.style.display = '';
+    } else {
+        // Create initial span if it doesn't exist (photo was set from DB)
+        const ring = document.getElementById('avatarRing');
+        const span = document.createElement('span');
+        span.id = 'avatarInitial';
+        span.textContent = {!! json_encode(strtoupper(substr(auth()->user()->name, 0, 1))) !!};
+        ring.insertBefore(span, ring.firstChild);
+    }
+    // Flag to remove the photo on save
+    document.getElementById('removePhotoInput').value = '1';
+    // Hide the remove button
+    document.getElementById('removePhotoBtn').style.display = 'none';
 }
 
 let profileEditMode = false;

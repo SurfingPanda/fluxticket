@@ -238,6 +238,11 @@
                             @csrf
                             @method('DELETE')
                         </form>
+                        {{-- Hidden form for reset password --}}
+                        <form method="POST" id="resetPwForm_{{ $user->id }}" action="{{ route('roles.reset-password', $user) }}" style="display:none">
+                            @csrf
+                            @method('PUT')
+                        </form>
                         @if($user->is_active)
                         <button type="button"
                             onclick="openToggleModal({{ $user->id }}, {{ json_encode($user->name) }}, 'disable')"
@@ -264,6 +269,12 @@
                             <i class="bi bi-sliders"></i> Access
                         </button>
                         @endif
+                        <button type="button"
+                            onclick="openResetPwModal({{ $user->id }}, {{ json_encode($user->name) }})"
+                            style="display:inline-flex;align-items:center;gap:.3rem;background:transparent;border:1px solid rgba(251,146,60,.35);border-radius:.5rem;padding:.3rem .65rem;font-size:.75rem;font-weight:500;color:#fb923c;cursor:pointer;transition:background .15s,border-color .15s"
+                            onmouseover="this.style.background='rgba(251,146,60,.1)'" onmouseout="this.style.background='transparent'">
+                            <i class="bi bi-key"></i> Reset PW
+                        </button>
                         <button type="button"
                             onclick="openDeleteModal({{ $user->id }}, {{ json_encode($user->name) }})"
                             style="display:inline-flex;align-items:center;gap:.3rem;background:transparent;border:1px solid rgba(248,113,113,.35);border-radius:.5rem;padding:.3rem .65rem;font-size:.75rem;font-weight:500;color:#f87171;cursor:pointer;transition:background .15s,border-color .15s"
@@ -372,6 +383,36 @@
                 style="display:inline-flex;align-items:center;gap:.4rem;border:none;border-radius:.5rem;padding:.4rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer;color:#fff;background:#ef4444">
                 <i class="bi bi-trash3" id="deleteConfirmIcon"></i>
                 <span id="deleteConfirmText">Yes, Delete Account</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- ── Reset Password Confirmation Modal ── --}}
+<div class="access-modal-backdrop" id="resetPwModalBackdrop" style="display:none" onclick="if(event.target===this)closeResetPwModal()">
+    <div class="access-modal" style="max-width:420px">
+        <div class="access-modal-header">
+            <div style="display:flex;align-items:center;gap:.75rem">
+                <div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;background:rgba(251,146,60,.15);color:#fb923c">
+                    <i class="bi bi-key"></i>
+                </div>
+                <h4 id="resetPwModalTitle" style="margin:0;font-size:.9rem;font-weight:700;color:var(--text)"></h4>
+            </div>
+            <button class="modal-close" onclick="closeResetPwModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div style="padding:1.25rem 1.4rem">
+            <p id="resetPwModalBody" style="font-size:.85rem;color:var(--muted);margin:0;line-height:1.6"></p>
+            <div style="margin-top:.85rem;padding:.75rem 1rem;background:rgba(251,146,60,.07);border:1px solid rgba(251,146,60,.2);border-radius:.6rem;font-size:.78rem;color:#fb923c">
+                <i class="bi bi-info-circle-fill" style="margin-right:.35rem"></i>
+                The password will be reset to <strong>Password@123</strong>. The user should change it after logging in.
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:.6rem;padding:.9rem 1.4rem;border-top:1px solid var(--border)">
+            <button onclick="closeResetPwModal()" style="background:transparent;border:1px solid var(--border);border-radius:.5rem;color:var(--muted);padding:.38rem .9rem;font-size:.78rem;cursor:pointer">Cancel</button>
+            <button id="resetPwConfirmBtn" onclick="submitResetPw()"
+                style="display:inline-flex;align-items:center;gap:.4rem;border:none;border-radius:.5rem;padding:.4rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer;color:#fff;background:#fb923c">
+                <i class="bi bi-key" id="resetPwConfirmIcon"></i>
+                <span id="resetPwConfirmText">Yes, Reset Password</span>
             </button>
         </div>
     </div>
@@ -610,7 +651,48 @@ function resetAccessToGlobal() {
 }
 
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeAccessModal();
+    if (e.key === 'Escape') { closeAccessModal(); closeResetPwModal(); }
 });
+
+let _resetPwUserId = null;
+
+function openResetPwModal(userId, userName) {
+    _resetPwUserId = userId;
+    document.getElementById('resetPwModalTitle').textContent = `Reset Password — ${userName}`;
+    document.getElementById('resetPwModalBody').textContent  = `Are you sure you want to reset ${userName}'s password?`;
+    const backdrop = document.getElementById('resetPwModalBackdrop');
+    if (backdrop.parentElement !== document.body) document.body.appendChild(backdrop);
+    backdrop.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeResetPwModal() {
+    document.getElementById('resetPwModalBackdrop').style.display = 'none';
+    document.body.style.overflow = '';
+    _resetPwUserId = null;
+    const btn  = document.getElementById('resetPwConfirmBtn');
+    const icon = document.getElementById('resetPwConfirmIcon');
+    const text = document.getElementById('resetPwConfirmText');
+    btn.disabled      = false;
+    btn.style.opacity = '';
+    btn.style.cursor  = '';
+    icon.className    = 'bi bi-key';
+    icon.innerHTML    = '';
+    text.textContent  = 'Yes, Reset Password';
+}
+
+function submitResetPw() {
+    if (!_resetPwUserId) return;
+    const btn  = document.getElementById('resetPwConfirmBtn');
+    const icon = document.getElementById('resetPwConfirmIcon');
+    const text = document.getElementById('resetPwConfirmText');
+    btn.disabled      = true;
+    btn.style.opacity = '.75';
+    btn.style.cursor  = 'not-allowed';
+    icon.className    = '';
+    icon.innerHTML    = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:deleteSpin .7s linear infinite;display:inline-block"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+    text.textContent  = 'Resetting…';
+    document.getElementById('resetPwForm_' + _resetPwUserId).submit();
+}
 </script>
 @endpush
