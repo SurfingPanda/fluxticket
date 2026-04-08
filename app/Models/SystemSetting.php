@@ -36,7 +36,7 @@ class SystemSetting extends Model
     // All routing departments
     public static function allDepartments(): array
     {
-        return ['IT', 'HR', 'Finance', 'OPIC', 'Dispatch', 'Asset/Admin', 'Marketing', 'RSO', 'Store'];
+        return ['IT', 'HR', 'Finance', 'OPIC', 'Dispatch', 'Asset/Admin', 'Marketing', 'RSO', 'Store', 'Accounting', 'Security'];
     }
 
     public static function agentPageAccess(): array

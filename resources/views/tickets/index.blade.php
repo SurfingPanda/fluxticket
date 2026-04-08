@@ -351,7 +351,7 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
                     <label class="m-label">Department <span style="color:#f87171">*</span></label>
                     <select class="m-select" id="route-dept" name="department" required onchange="loadRouteDeptUsers(this.value)">
                         <option value="" disabled selected>Select department…</option>
-                        @foreach($allowedDepts ?? ['IT','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store'] as $d)
+                        @foreach($allowedDepts ?? ['IT','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store','Accounting','Security'] as $d)
                         <option value="{{ $d }}">{{ $d }}</option>
                         @endforeach
                     </select>

@@ -214,32 +214,17 @@
         <a class="nav-item-link {{ $ap==='dashboard'?'active':'' }}" href="{{ route('dashboard') }}">
             <i class="bi bi-grid-fill nav-icon"></i><span class="nav-text">Dashboard</span>
         </a>
+        <a class="nav-item-link {{ $ap==='calendar'?'active':'' }}" href="{{ route('calendar') }}">
+            <i class="bi bi-calendar3 nav-icon"></i><span class="nav-text">Calendar</span>
+        </a>
         <button class="nav-item-link nav-dropdown-trigger {{ in_array($ap,['tickets','queue'])?'active':'' }}" id="ticketsDropdownTrigger" type="button">
             <i class="bi bi-ticket-perforated nav-icon"></i>
             <span class="nav-text">All Tickets</span>
             <i class="bi bi-chevron-down nav-chevron nav-badge"></i>
         </button>
         <div class="nav-submenu" id="ticketsSubmenu">
-            <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&!request('type')?'active':'' }}" href="{{ route('tickets.index') }}">
-                <i class="bi bi-ticket nav-icon" style="font-size:.85rem"></i><span class="nav-text">All Tickets</span>
-            </a>
             <a class="nav-item-link nav-sub-item {{ $ap==='queue'?'active':'' }}" href="{{ route('queue') }}">
                 <i class="bi bi-clock-history nav-icon" style="font-size:.85rem"></i><span class="nav-text">My Queue</span>
-            </a>
-            <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&request('type')==='incident'?'active':'' }}" href="{{ route('tickets.index',['type'=>'incident']) }}">
-                <i class="bi bi-exclamation-triangle nav-icon" style="font-size:.85rem"></i><span class="nav-text">Incident Tickets</span>
-            </a>
-            <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&request('type')==='service_request'?'active':'' }}" href="{{ route('tickets.index',['type'=>'service_request']) }}">
-                <i class="bi bi-tools nav-icon" style="font-size:.85rem"></i><span class="nav-text">Service Requests</span>
-            </a>
-            <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&request('type')==='question'?'active':'' }}" href="{{ route('tickets.index',['type'=>'question']) }}">
-                <i class="bi bi-question-circle nav-icon" style="font-size:.85rem"></i><span class="nav-text">Question</span>
-            </a>
-            <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&request('type')==='change_request'?'active':'' }}" href="{{ route('tickets.index',['type'=>'change_request']) }}">
-                <i class="bi bi-arrow-repeat nav-icon" style="font-size:.85rem"></i><span class="nav-text">Change Request</span>
-            </a>
-            <a class="nav-item-link nav-sub-item {{ $ap==='tickets'&&request('submitted')?'active':'' }}" href="{{ route('tickets.index',['submitted'=>1]) }}">
-                <i class="bi bi-send nav-icon" style="font-size:.85rem"></i><span class="nav-text">Submitted Requests</span>
             </a>
         </div>
 
@@ -257,14 +242,34 @@
         @if($_showManage)
         <div class="sidebar-section-label">Manage</div>
         @if($_showAgents)
-        <a class="nav-item-link {{ $ap==='agents'?'active':'' }}" href="{{ route('agents.index') }}">
-            <i class="bi bi-people nav-icon"></i><span class="nav-text">Agents</span>
-        </a>
+        <button class="nav-item-link nav-dropdown-trigger {{ in_array($ap,['agents','agents_departments'])?'active':'' }}" id="agentsDropdownTrigger" type="button">
+            <i class="bi bi-people nav-icon"></i>
+            <span class="nav-text">Agents</span>
+            <i class="bi bi-chevron-down nav-chevron nav-badge"></i>
+        </button>
+        <div class="nav-submenu" id="agentsSubmenu">
+            <a class="nav-item-link nav-sub-item {{ $ap==='agents'?'active':'' }}" href="{{ route('agents.index') }}">
+                <i class="bi bi-person-lines-fill nav-icon" style="font-size:.85rem"></i><span class="nav-text">All Agents</span>
+            </a>
+            <a class="nav-item-link nav-sub-item {{ $ap==='agents_departments'?'active':'' }}" href="{{ route('agents.departments') }}">
+                <i class="bi bi-building nav-icon" style="font-size:.85rem"></i><span class="nav-text">Departments</span>
+            </a>
+        </div>
         @endif
         @if($_showReports)
-        <a class="nav-item-link {{ $ap==='reports'?'active':'' }}" href="{{ route('reports.index') }}">
-            <i class="bi bi-bar-chart-line nav-icon"></i><span class="nav-text">Reports</span>
-        </a>
+        <button class="nav-item-link nav-dropdown-trigger {{ in_array($ap,['reports','reports_agents'])?'active':'' }}" id="reportsDropdownTrigger" type="button">
+            <i class="bi bi-bar-chart-line nav-icon"></i>
+            <span class="nav-text">Reports</span>
+            <i class="bi bi-chevron-down nav-chevron nav-badge"></i>
+        </button>
+        <div class="nav-submenu" id="reportsSubmenu">
+            <a class="nav-item-link nav-sub-item {{ $ap==='reports'?'active':'' }}" href="{{ route('reports.index') }}">
+                <i class="bi bi-speedometer2 nav-icon" style="font-size:.85rem"></i><span class="nav-text">Overview</span>
+            </a>
+            <a class="nav-item-link nav-sub-item {{ $ap==='reports_agents'?'active':'' }}" href="{{ route('reports.agents') }}">
+                <i class="bi bi-person-badge nav-icon" style="font-size:.85rem"></i><span class="nav-text">Agent Performance</span>
+            </a>
+        </div>
         @endif
         @if($_showKb)
         <a class="nav-item-link {{ $ap==='knowledge'?'active':'' }}" href="{{ route('knowledge.index') }}">
@@ -280,9 +285,22 @@
 
         @if($_showSettings)
         <div class="sidebar-section-label">System</div>
-        <a class="nav-item-link {{ $ap==='settings'?'active':'' }}" href="{{ route('settings.index') }}">
-            <i class="bi bi-gear nav-icon"></i><span class="nav-text">Settings</span>
-        </a>
+        <button class="nav-item-link nav-dropdown-trigger {{ in_array($ap,['settings','integrations','audit_logs'])?'active':'' }}" id="systemDropdownTrigger" type="button">
+            <i class="bi bi-sliders nav-icon"></i>
+            <span class="nav-text">System</span>
+            <i class="bi bi-chevron-down nav-chevron nav-badge"></i>
+        </button>
+        <div class="nav-submenu" id="systemSubmenu">
+            <a class="nav-item-link nav-sub-item {{ $ap==='settings'?'active':'' }}" href="{{ route('settings.index') }}">
+                <i class="bi bi-gear nav-icon" style="font-size:.85rem"></i><span class="nav-text">Settings</span>
+            </a>
+            <a class="nav-item-link nav-sub-item {{ $ap==='integrations'?'active':'' }}" href="{{ route('integrations.index') }}">
+                <i class="bi bi-plug nav-icon" style="font-size:.85rem"></i><span class="nav-text">Integrations</span>
+            </a>
+            <a class="nav-item-link nav-sub-item {{ $ap==='audit_logs'?'active':'' }}" href="{{ route('audit.logs') }}">
+                <i class="bi bi-journal-text nav-icon" style="font-size:.85rem"></i><span class="nav-text">Audit Logs</span>
+            </a>
+        </div>
         @endif
     </div>
 
@@ -556,6 +574,57 @@ $_deptList = auth()->user()->isSuperAdmin()
         });
     })();
 
+    // ── Agents dropdown ──
+    (function() {
+        const trigger = document.getElementById('agentsDropdownTrigger');
+        const submenu = document.getElementById('agentsSubmenu');
+        if (!trigger || !submenu) return;
+        const chevron = trigger.querySelector('.nav-chevron');
+        const stored = localStorage.getItem('agentsDropdown');
+        const open = stored === 'open' || {{ in_array($ap ?? '', ['agents','agents_departments']) ? 'true' : 'false' }};
+        if (open) { submenu.classList.add('open'); if (chevron) chevron.style.transform = 'rotate(180deg)'; }
+        trigger.addEventListener('click', function() {
+            submenu.classList.toggle('open');
+            const isOpen = submenu.classList.contains('open');
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+            localStorage.setItem('agentsDropdown', isOpen ? 'open' : '');
+        });
+    })();
+
+    // ── Reports dropdown ──
+    (function() {
+        const trigger = document.getElementById('reportsDropdownTrigger');
+        const submenu = document.getElementById('reportsSubmenu');
+        if (!trigger || !submenu) return;
+        const chevron = trigger.querySelector('.nav-chevron');
+        const stored = localStorage.getItem('reportsDropdown');
+        const open = stored === 'open' || {{ in_array($ap ?? '', ['reports','reports_agents']) ? 'true' : 'false' }};
+        if (open) { submenu.classList.add('open'); if (chevron) chevron.style.transform = 'rotate(180deg)'; }
+        trigger.addEventListener('click', function() {
+            submenu.classList.toggle('open');
+            const isOpen = submenu.classList.contains('open');
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+            localStorage.setItem('reportsDropdown', isOpen ? 'open' : '');
+        });
+    })();
+
+    // ── System dropdown ──
+    (function() {
+        const trigger = document.getElementById('systemDropdownTrigger');
+        const submenu = document.getElementById('systemSubmenu');
+        if (!trigger || !submenu) return;
+        const chevron = trigger.querySelector('.nav-chevron');
+        const stored = localStorage.getItem('systemDropdown');
+        const open = stored === 'open' || {{ in_array($ap ?? '', ['settings','integrations','audit_logs']) ? 'true' : 'false' }};
+        if (open) { submenu.classList.add('open'); if (chevron) chevron.style.transform = 'rotate(180deg)'; }
+        trigger.addEventListener('click', function() {
+            submenu.classList.toggle('open');
+            const isOpen = submenu.classList.contains('open');
+            if (chevron) chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+            localStorage.setItem('systemDropdown', isOpen ? 'open' : '');
+        });
+    })();
+
     // ── Mobile sidebar ──
     const _overlay = document.getElementById('sidebarOverlay');
     function closeMobileSidebar() {
@@ -623,7 +692,7 @@ $_deptList = auth()->user()->isSuperAdmin()
     });
 
     // ── Generic custom dropdown ──
-    const _cats  = ['IT Support','Network','Hardware','Software','Access & Permissions','HR','Facilities','Other'].map(v=>({val:v,label:v,sub:''}));
+    const _cats  = ['IT Support','Network','Hardware','Software','Access & Permissions','HR','Facilities','Accounting','Security','Other'].map(v=>({val:v,label:v,sub:''}));
     const _types = ['Incident','Service Request','Question','Change Request'].map(v=>({val:v,label:v,sub:''}));
     const _depts = @json($_deptList).map(v=>({val:v,label:v,sub:''}));
     let   _assigneeItems = [];

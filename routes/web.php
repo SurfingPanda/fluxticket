@@ -131,6 +131,15 @@ Route::middleware('auth')->group(function () {
         return view('dashboard', compact('tickets', 'stats', 'deptUsers', 'recentActivity') + ['activePage' => 'dashboard']);
     })->name('dashboard');
 
+    // ── Calendar ──
+    Route::get('/calendar', function () {
+        $tickets = \App\Models\Ticket::select('id','ticket_number','subject','status','priority','type','sla_due_at','created_at','assignee')
+            ->whereNotNull('sla_due_at')
+            ->orWhereIn('status', ['open','progress'])
+            ->get();
+        return view('calendar', compact('tickets') + ['activePage' => 'calendar']);
+    })->name('calendar');
+
     Route::get('/tickets', function () {
         $user      = auth()->user();
         $type      = request('type');
@@ -272,9 +281,63 @@ Route::middleware('auth')->group(function () {
         return view('agents.index', compact('agents') + ['activePage'=>'agents']);
     })->name('agents.index');
 
+    Route::get('/agents/departments', function () {
+        if (!auth()->user()->isSuperAdmin()) {
+            $p = auth()->user()->effectivePageAccess();
+            abort_if(!($p['agents'] ?? false), 403, 'Access restricted by administrator.');
+        }
+        $ticketCounts = \App\Models\Ticket::selectRaw('assignee, status, count(*) as count')
+            ->groupBy('assignee', 'status')->get()->groupBy('assignee');
+        $agents = \App\Models\User::whereNotNull('department')->where('role', 'agent')
+            ->orderBy('department')->orderBy('name')->get()
+            ->map(function ($u) use ($ticketCounts) {
+                $rows = $ticketCounts->get($u->name, collect());
+                $u->open_tickets     = $rows->where('status', 'open')->sum('count');
+                $u->active_tickets   = $rows->where('status', 'progress')->sum('count');
+                $u->resolved_tickets = $rows->whereIn('status', ['resolved', 'closed'])->sum('count');
+                $u->total_tickets    = $u->open_tickets + $u->active_tickets + $u->resolved_tickets;
+                return $u;
+            });
+        $departments = $agents->groupBy('department');
+        return view('agents.departments', compact('departments') + ['activePage' => 'agents_departments']);
+    })->name('agents.departments');
+
+    Route::get('/reports/agents', function () {
+        if (!auth()->user()->isSuperAdmin()) {
+            $p = auth()->user()->effectivePageAccess();
+            abort_if(!($p['reports'] ?? false), 403, 'Access restricted by administrator.');
+        }
+        $ticketCountsRaw = \App\Models\Ticket::selectRaw('assignee, status, count(*) as cnt')
+            ->whereNotNull('assignee')->groupBy('assignee', 'status')->get()->groupBy('assignee');
+        $agentAvgHrs = \App\Models\Ticket::selectRaw('assignee, avg(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) as avg_min')
+            ->whereIn('status', ['resolved', 'closed'])->whereNotNull('resolved_at')->whereNotNull('assignee')
+            ->groupBy('assignee')->pluck('avg_min', 'assignee');
+        $agentPerf = \App\Models\User::whereNotNull('department')->where('role', 'agent')->orderBy('name')
+            ->get(['name', 'department'])
+            ->map(function ($user) use ($ticketCountsRaw, $agentAvgHrs) {
+                $rows     = $ticketCountsRaw->get($user->name, collect());
+                $total    = $rows->sum('cnt');
+                $resolved = $rows->whereIn('status', ['resolved', 'closed'])->sum('cnt');
+                $open     = $rows->where('status', 'open')->sum('cnt');
+                $progress = $rows->where('status', 'progress')->sum('cnt');
+                $avgMin   = $agentAvgHrs->get($user->name);
+                return (object)[
+                    'name'     => $user->name,
+                    'dept'     => $user->department,
+                    'total'    => $total,
+                    'resolved' => $resolved,
+                    'open'     => $open,
+                    'progress' => $progress,
+                    'rate'     => $total ? round($resolved / $total * 100) : 0,
+                    'avg_hrs'  => $avgMin ? round($avgMin / 60, 1) : null,
+                ];
+            })->sortByDesc('total');
+        return view('reports.agents', compact('agentPerf') + ['activePage' => 'reports_agents']);
+    })->name('reports.agents');
+
     // ── Categories ──
     Route::get('/categories', function () {
-        $catNames = ['IT Support','Hardware','Software','Network','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store','General'];
+        $catNames = ['IT Support','Hardware','Software','Network','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store','Accounting','Security','General'];
         $rows = \App\Models\Ticket::selectRaw('category, status, count(*) as count')
             ->groupBy('category','status')->get()->groupBy('category');
         $categories = collect($catNames)->map(function ($name) use ($rows) {
@@ -524,6 +587,29 @@ Route::middleware('auth')->group(function () {
             return back()->with('role_success', "Account deleted for {$name}.");
         })->name('roles.destroy');
     });
+
+    // ── Integrations ──
+    Route::get('/integrations', function () {
+        if (!auth()->user()->isSuperAdmin()) {
+            $p = auth()->user()->effectivePageAccess();
+            abort_if(!($p['settings'] ?? false), 403, 'Access restricted by administrator.');
+        }
+        return view('system.integrations', ['activePage' => 'integrations']);
+    })->name('integrations.index');
+
+    // ── Audit Logs ──
+    Route::get('/audit-logs', function () {
+        if (!auth()->user()->isSuperAdmin()) {
+            $p = auth()->user()->effectivePageAccess();
+            abort_if(!($p['settings'] ?? false), 403, 'Access restricted by administrator.');
+        }
+        try {
+            $logs = \App\Models\AuditLog::with('user')->latest()->paginate(50);
+        } catch (\Exception $e) {
+            $logs = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
+        }
+        return view('system.audit-logs', compact('logs') + ['activePage' => 'audit_logs']);
+    })->name('audit.logs');
 
     // ── Settings ──
     Route::get('/settings', function () {

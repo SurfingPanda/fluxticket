@@ -54,20 +54,33 @@
 <div class="panel">
     <div class="panel-header">
         <span class="panel-title"><i class="bi bi-clock-history me-2" style="color:var(--accent)"></i>My Assigned Tickets</span>
-        <div style="display:flex;flex-direction:column;gap:.45rem;align-items:flex-end">
-            <div class="d-flex gap-2 flex-wrap" id="statusFilters">
-                <button class="filter-btn active" data-status="all"      onclick="filterStatus('all',this)">All</button>
-                <button class="filter-btn"        data-status="open"     onclick="filterStatus('open',this)">Open</button>
-                <button class="filter-btn"        data-status="progress" onclick="filterStatus('progress',this)">In Progress</button>
-                <button class="filter-btn"        data-status="resolved" onclick="filterStatus('resolved',this)">Resolved</button>
-                <button class="filter-btn"        data-status="closed"   onclick="filterStatus('closed',this)">Closed</button>
-            </div>
-            <div class="d-flex gap-2 flex-wrap" id="priorityFilters">
-                <span style="font-size:.68rem;color:var(--muted);align-self:center;margin-right:.15rem">Priority:</span>
+        <div id="statusFilters" class="d-flex gap-2 flex-wrap">
+            <button class="filter-btn active" data-status="all"      onclick="filterStatus('all',this)">All</button>
+            <button class="filter-btn"        data-status="open"     onclick="filterStatus('open',this)">Open</button>
+            <button class="filter-btn"        data-status="progress" onclick="filterStatus('progress',this)">In Progress</button>
+            <button class="filter-btn"        data-status="resolved" onclick="filterStatus('resolved',this)">Resolved</button>
+            <button class="filter-btn"        data-status="closed"   onclick="filterStatus('closed',this)">Closed</button>
+        </div>
+    </div>
+    <div style="padding:.55rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap;background:var(--surface2)">
+        <div style="display:flex;align-items:center;gap:.6rem">
+            <span style="font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Priority</span>
+            <div id="priorityFilters" class="d-flex gap-1">
                 <button class="filter-btn active" data-priority="all"    onclick="filterPriority('all',this)">All</button>
                 <button class="filter-btn"        data-priority="high"   onclick="filterPriority('high',this)" style="color:#f87171">High</button>
                 <button class="filter-btn"        data-priority="medium" onclick="filterPriority('medium',this)" style="color:#fbbf24">Medium</button>
                 <button class="filter-btn"        data-priority="low"    onclick="filterPriority('low',this)" style="color:#34d399">Low</button>
+            </div>
+        </div>
+        <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+            <span style="font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Type</span>
+            <div id="typeFilters" class="d-flex gap-1 flex-wrap">
+                <button class="filter-btn active" data-type="all"             onclick="filterType('all',this)">All</button>
+                <button class="filter-btn"        data-type="incident"        onclick="filterType('incident',this)">Incident</button>
+                <button class="filter-btn"        data-type="service_request" onclick="filterType('service_request',this)">Service Request</button>
+                <button class="filter-btn"        data-type="question"        onclick="filterType('question',this)">Question</button>
+                <button class="filter-btn"        data-type="change_request"  onclick="filterType('change_request',this)">Change Request</button>
             </div>
         </div>
     </div>
@@ -96,7 +109,7 @@
             </thead>
             <tbody>
                 @foreach($tickets as $t)
-                <tr data-status="{{ $t->status }}" data-priority="{{ $t->priority }}" data-search="{{ strtolower($t->ticket_number . ' ' . $t->subject . ' ' . ($t->user->name ?? '') . ' ' . $t->category . ' ' . ($t->type ?? '')) }}">
+                <tr data-status="{{ $t->status }}" data-priority="{{ $t->priority }}" data-type="{{ $t->type ?? '' }}" data-search="{{ strtolower($t->ticket_number . ' ' . $t->subject . ' ' . ($t->user->name ?? '') . ' ' . $t->category . ' ' . ($t->type ?? '')) }}">
                     <td><span style="font-size:.72rem;font-weight:700;color:#818cf8;font-family:monospace">{{ $t->ticket_number }}</span></td>
                     <td style="max-width:200px">
                         <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $t->subject }}</div>
@@ -228,7 +241,7 @@
                 <div class="m-field"><label class="m-label">Department <span style="color:#f87171">*</span></label>
                     <select class="m-select" id="route-dept" name="department" required onchange="loadRouteDeptUsers(this.value)">
                         <option value="" disabled selected>Select department…</option>
-                        @foreach($allowedDepts ?? ['IT','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store'] as $d)
+                        @foreach($allowedDepts ?? ['IT','HR','Finance','OPIC','Dispatch','Asset/Admin','Marketing','RSO','Store','Accounting','Security'] as $d)
                         <option value="{{ $d }}">{{ $d }}</option>
                         @endforeach
                     </select>
@@ -479,9 +492,10 @@
     const _FKEY = 'flux_filter_queue';
     let _currentStatus   = 'all';
     let _currentPriority = 'all';
+    let _currentType     = 'all';
 
     function _saveFilter() {
-        try { localStorage.setItem(_FKEY, JSON.stringify({ status: _currentStatus, priority: _currentPriority })); } catch(e){}
+        try { localStorage.setItem(_FKEY, JSON.stringify({ status: _currentStatus, priority: _currentPriority, type: _currentType })); } catch(e){}
     }
     function filterStatus(s, btn) {
         _currentStatus = s;
@@ -495,13 +509,20 @@
         btn.classList.add('active');
         _saveFilter(); applyFilters();
     }
+    function filterType(t, btn) {
+        _currentType = t;
+        document.querySelectorAll('#typeFilters .filter-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        _saveFilter(); applyFilters();
+    }
     function applyFilters() {
         const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
         document.querySelectorAll('#ticketTable tbody tr').forEach(row => {
             const matchStatus   = _currentStatus==='all'   || row.dataset.status===_currentStatus;
             const matchPriority = _currentPriority==='all' || row.dataset.priority===_currentPriority;
+            const matchType     = _currentType==='all'     || row.dataset.type===_currentType;
             const matchSearch   = !q || (row.dataset.search||'').includes(q);
-            row.style.display = (matchStatus && matchPriority && matchSearch) ? '' : 'none';
+            row.style.display = (matchStatus && matchPriority && matchType && matchSearch) ? '' : 'none';
         });
         updateTableScroll();
     }
@@ -530,6 +551,10 @@
             if (saved.priority && saved.priority !== 'all') {
                 const b = document.querySelector('#priorityFilters [data-priority="'+saved.priority+'"]');
                 if (b) filterPriority(saved.priority, b);
+            }
+            if (saved.type && saved.type !== 'all') {
+                const b = document.querySelector('#typeFilters [data-type="'+saved.type+'"]');
+                if (b) filterType(saved.type, b);
             }
         } catch(e) {}
     })();
