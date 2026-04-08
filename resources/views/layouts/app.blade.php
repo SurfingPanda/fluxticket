@@ -173,9 +173,11 @@
             .sidebar.mini { transform:translateX(-100%); width:var(--sidebar-w) !important; }
             .sidebar.mini.mobile-open { transform:translateX(0); }
             .main-wrap,.main-wrap.mini { margin-left:0 !important; }
+            /* Critical: reset topbar left so it spans the full viewport on mobile */
+            .topbar, .main-wrap.mini .topbar { left:0 !important; padding:.55rem .875rem; gap:.4rem; }
+            .topbar-title-sub { display:none; }
             .mob-hamburger { display:flex; }
-            .topbar { padding:.6rem .875rem; gap:.5rem; }
-            .content { padding:.875rem; }
+            .content { padding:.875rem; padding-top:calc(.875rem + 48px + .5rem); }
             .topbar-search { display:none !important; }
             .btn-new-text { display:none; }
             .flux-modal { border-radius:.875rem; max-width:calc(100vw - 1.5rem); }
@@ -185,8 +187,10 @@
             .m-row { grid-template-columns:1fr !important; }
         }
         @media (max-width:480px) {
-            .content { padding:.65rem; }
+            .content { padding:.65rem; padding-top:calc(.65rem + 48px + .5rem); }
             .stat-grid { grid-template-columns:1fr 1fr !important; }
+            /* Shrink right-side topbar items on very small screens */
+            .topbar-right-icons { gap:.35rem !important; }
         }
         @stack('styles')
     </style>
@@ -344,14 +348,14 @@ $_deptList = auth()->user()->isSuperAdmin()
 {{-- ══ MAIN ══ --}}
 <div class="main-wrap" id="mainWrap">
     <header class="topbar">
-        <div style="display:flex;align-items:center;gap:.6rem">
+        <div style="display:flex;align-items:center;gap:.6rem;min-width:0;flex:1">
             <button class="mob-hamburger" id="mobHamburger" aria-label="Menu"><i class="bi bi-list"></i></button>
-            <div>
-                <div style="font-size:1.05rem;font-weight:700;color:var(--text)">@yield('topbar-title')</div>
-                <div style="font-size:.72rem;color:var(--muted)">@yield('topbar-sub')</div>
+            <div style="min-width:0">
+                <div style="font-size:1rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@yield('topbar-title')</div>
+                <div class="topbar-title-sub" style="font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@yield('topbar-sub')</div>
             </div>
         </div>
-        <div style="display:flex;align-items:center;gap:.75rem">
+        <div class="topbar-right-icons" style="display:flex;align-items:center;gap:.75rem;flex-shrink:0">
             {{-- Global Search --}}
             <div class="topbar-search d-none d-md-flex" style="position:relative">
                 <i class="bi bi-search" style="color:var(--muted);font-size:.8rem;flex-shrink:0"></i>
