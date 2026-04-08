@@ -6,7 +6,6 @@
     <title>@yield('title', 'FluxTickets') — FluxTickets</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         :root { --bg:#0f172a; --surface:#1e293b; --surface2:#263348; --border:#334155; --text:#e2e8f0; --muted:#94a3b8; --accent:#6366f1; --sidebar-w:240px; }
@@ -62,9 +61,10 @@
         .mini-signout { display:none; justify-content:center; align-items:center; padding:.4rem 0; }
 
         /* ── Layout ── */
-        .main-wrap { margin-left:60px; flex:1; display:flex; flex-direction:column; min-height:100vh; transition:margin-left .25s ease; overflow-x:hidden; }
+        .main-wrap { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; min-height:100vh; transition:margin-left .25s ease; overflow-x:hidden; }
         .main-wrap.mini { margin-left:60px; }
-        .topbar { position:fixed; top:0; left:var(--sidebar-w); right:0; z-index:50; background:var(--surface); border-bottom:1px solid var(--border); padding:.75rem 1.25rem; display:flex; align-items:center; justify-content:space-between; gap:.75rem; transition:background .3s,border-color .3s; flex-shrink:0; }
+        .topbar { position:fixed; top:0; left:var(--sidebar-w); right:0; z-index:50; background:var(--surface); border-bottom:1px solid var(--border); padding:.75rem 1.25rem; display:flex; align-items:center; justify-content:space-between; gap:.75rem; transition:left .25s ease,background .3s,border-color .3s; flex-shrink:0; }
+        .main-wrap.mini .topbar { left:60px; }
         .content { padding:1.25rem; flex:1; padding-top:calc(1.25rem + 52px + 1rem); }
 
         /* ── Common components ── */
@@ -100,6 +100,12 @@
         .m-input::placeholder,.m-textarea::placeholder { color:var(--muted); }
         .m-input:focus,.m-select:focus,.m-textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(99,102,241,.2); }
         .m-select option { background:var(--surface); color:var(--text); }
+        .c-dd { display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:.6rem;max-height:200px;overflow-y:auto;z-index:9999;box-shadow:0 6px 18px rgba(0,0,0,.35); }
+        .c-dd-item { padding:.5rem .75rem;cursor:pointer;font-size:.82rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center; }
+        .c-dd-item:last-child { border-bottom:none; }
+        .c-dd-item:hover { background:rgba(99,102,241,.1); }
+        .c-dd-item .cd-label { color:var(--text);font-weight:500; }
+        .c-dd-item .cd-sub { color:var(--muted);font-size:.75rem; }
         .m-textarea { resize:vertical; min-height:90px; }
         .btn-primary { background:linear-gradient(135deg,#4f46e5,#7c3aed); border:none; border-radius:.6rem; color:white; font-size:.875rem; font-weight:600; padding:.5rem 1.25rem; cursor:pointer; box-shadow:0 3px 12px rgba(99,102,241,.3); display:inline-flex; align-items:center; gap:.4rem; transition:opacity .2s,transform .15s; }
         .btn-primary:hover { opacity:.9; transform:translateY(-1px); }
@@ -198,6 +204,9 @@
             <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo">
         </div>
         <span class="brand-name">FluxTickets</span>
+        <button class="sidebar-toggle" id="sidebarToggle" title="Collapse sidebar" type="button">
+            <i class="bi bi-layout-sidebar" id="sidebarToggleIcon"></i>
+        </button>
     </div>
 
     <div class="sidebar-nav">
@@ -307,6 +316,11 @@
 $_deptUsers = \App\Models\User::whereNotNull('department')
     ->orderBy('name')->get(['id','name','department'])
     ->groupBy('department')->map(fn($g) => $g->pluck('name'));
+$_allUsers = \App\Models\User::orderBy('name')->get(['id','name','department'])
+    ->map(fn($u) => ['id' => $u->id, 'name' => $u->name, 'department' => $u->department ?? '']);
+$_deptList = auth()->user()->isSuperAdmin()
+    ? \App\Models\SystemSetting::allDepartments()
+    : auth()->user()->effectiveRoutingDepts();
 @endphp
 
 {{-- ══ MAIN ══ --}}
@@ -385,25 +399,56 @@ $_deptUsers = \App\Models\User::whereNotNull('department')
                 </div>
                 @endif
                 <div class="m-field">
+                    <label class="m-label">Requester <span style="color:#f87171">*</span></label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+                        <div style="position:relative">
+                            <input class="m-input" id="t-requester" name="requester" type="text"
+                                placeholder="Search name or type…" required
+                                value="{{ old('requester') }}"
+                                autocomplete="off"
+                                oninput="requesterSearch(this.value)"
+                                onfocus="requesterSearch(this.value)"
+                                onblur="setTimeout(()=>{const d=document.getElementById('requester-dropdown');if(d)d.style.display='none'},200)">
+                            <input type="hidden" id="t-requester-id" name="requester_id" value="{{ old('requester_id') }}">
+                            <div id="requester-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;max-height:180px;overflow-y:auto;z-index:9999;margin-top:2px;box-shadow:0 4px 12px rgba(0,0,0,.3)"></div>
+                        </div>
+                        <input class="m-input" id="t-requester-dept" name="requester_dept" type="text"
+                            placeholder="Department (auto-filled)"
+                            value="{{ old('requester_dept') }}"
+                            readonly
+                            style="background:var(--surface);cursor:default;color:var(--muted)">
+                    </div>
+                </div>
+                <div class="m-field">
                     <label class="m-label" for="t-subject">Subject <span style="color:#f87171">*</span></label>
                     <input class="m-input" id="t-subject" name="subject" type="text" placeholder="Briefly describe the issue…" required value="{{ old('subject') }}">
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem" class="m-field">
                     <div>
-                        <label class="m-label" for="t-category">Category <span style="color:#f87171">*</span></label>
-                        <select class="m-select" id="t-category" name="category" required>
-                            <option value="" disabled {{ old('category') ? '' : 'selected' }}>Select category…</option>
-                            @foreach(['IT Support','Network','Hardware','Software','Access & Permissions','HR','Facilities','Other'] as $cat)
-                            <option value="{{ $cat }}" {{ old('category') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                            @endforeach
-                        </select>
+                        <label class="m-label">Category <span style="color:#f87171">*</span></label>
+                        <div style="position:relative">
+                            <input class="m-input" id="t-cat-txt" type="text" placeholder="Search category…"
+                                autocomplete="off"
+                                value="{{ old('category') }}"
+                                oninput="cdFilter(this,'t-cat-dd','t-category',_cats)"
+                                onfocus="cdOpen(this,'t-cat-dd','t-category',_cats)"
+                                onblur="setTimeout(()=>cdClose('t-cat-dd'),200)">
+                            <input type="hidden" id="t-category" name="category" value="{{ old('category') }}">
+                            <div id="t-cat-dd" class="c-dd"></div>
+                        </div>
                     </div>
                     <div>
-                        <label class="m-label" for="t-type">Request Type</label>
-                        <select class="m-select" id="t-type" name="type">
-                            <option value="" disabled selected>Select type…</option>
-                            <option>Incident</option><option>Service Request</option><option>Question</option><option>Change Request</option>
-                        </select>
+                        <label class="m-label">Request Type</label>
+                        <div style="position:relative">
+                            <input class="m-input" id="t-type-txt" type="text" placeholder="Search type…"
+                                autocomplete="off"
+                                value="{{ old('type') }}"
+                                oninput="cdFilter(this,'t-type-dd','t-type',_types)"
+                                onfocus="cdOpen(this,'t-type-dd','t-type',_types)"
+                                onblur="setTimeout(()=>cdClose('t-type-dd'),200)">
+                            <input type="hidden" id="t-type" name="type" value="{{ old('type') }}">
+                            <div id="t-type-dd" class="c-dd"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="m-field">
@@ -418,18 +463,24 @@ $_deptUsers = \App\Models\User::whereNotNull('department')
                 <div class="m-field">
                     <label class="m-label">Assign To <span style="color:var(--muted);font-weight:400;text-transform:none;font-size:.7rem">(optional)</span></label>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
-                        @php
-                        $deptList = auth()->user()->isSuperAdmin()
-                            ? \App\Models\SystemSetting::allDepartments()
-                            : auth()->user()->effectiveRoutingDepts();
-                        @endphp
-                        <select class="m-select" id="nt-dept" onchange="loadAssignDeptUsers(this.value,'nt-assignee')">
-                            <option value="" selected>— Department —</option>
-                            @foreach($deptList as $d)<option value="{{ $d }}">{{ $d }}</option>@endforeach
-                        </select>
-                        <select class="m-select" id="nt-assignee" name="assignee" disabled>
-                            <option value="">Select department first…</option>
-                        </select>
+                        <div style="position:relative">
+                            <input class="m-input" id="nt-dept-txt" type="text" placeholder="— Department —"
+                                autocomplete="off"
+                                oninput="cdFilter(this,'nt-dept-dd','nt-dept-val',_depts,onDeptPick)"
+                                onfocus="cdOpen(this,'nt-dept-dd','nt-dept-val',_depts,onDeptPick)"
+                                onblur="setTimeout(()=>cdClose('nt-dept-dd'),200)">
+                            <input type="hidden" id="nt-dept-val">
+                            <div id="nt-dept-dd" class="c-dd"></div>
+                        </div>
+                        <div style="position:relative">
+                            <input class="m-input" id="nt-asn-txt" type="text" placeholder="Select department first…"
+                                autocomplete="off"
+                                oninput="cdFilter(this,'nt-asn-dd','nt-assignee',_assigneeItems)"
+                                onfocus="cdOpen(this,'nt-asn-dd','nt-assignee',_assigneeItems)"
+                                onblur="setTimeout(()=>cdClose('nt-asn-dd'),200)">
+                            <input type="hidden" id="nt-assignee" name="assignee" value="">
+                            <div id="nt-asn-dd" class="c-dd"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="m-field">
@@ -466,7 +517,28 @@ $_deptUsers = \App\Models\User::whereNotNull('department')
 
     const sidebar  = document.getElementById('appSidebar');
     const mainWrap = document.getElementById('mainWrap');
-    localStorage.removeItem('sidebar');
+
+    // ── Sidebar collapse ──
+    (function() {
+        const toggleBtn  = document.getElementById('sidebarToggle');
+        const toggleIcon = document.getElementById('sidebarToggleIcon');
+
+        function applyMini(mini) {
+            sidebar.classList.toggle('mini', mini);
+            mainWrap.classList.toggle('mini', mini);
+            toggleIcon.className = mini ? 'bi bi-layout-sidebar-reverse' : 'bi bi-layout-sidebar';
+            toggleBtn.title = mini ? 'Expand sidebar' : 'Collapse sidebar';
+        }
+
+        // Restore saved state
+        applyMini(localStorage.getItem('sidebar') === 'mini');
+
+        toggleBtn.addEventListener('click', () => {
+            const mini = !sidebar.classList.contains('mini');
+            applyMini(mini);
+            localStorage.setItem('sidebar', mini ? 'mini' : 'open');
+        });
+    })();
 
     // ── Tickets dropdown ──
     (function() {
@@ -513,14 +585,97 @@ $_deptUsers = \App\Models\User::whereNotNull('department')
 
     // ── New Ticket modal helpers ──
     window.deptUsers = @json($_deptUsers);
-    function loadAssignDeptUsers(dept, targetId) {
-        const sel = document.getElementById(targetId);
-        sel.innerHTML = '<option value="">— No specific person —</option>';
-        (window.deptUsers[dept] || []).forEach(name => {
-            const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
+    window.allUsers  = @json($_allUsers);
+
+    // Requester autocomplete
+    function requesterSearch(val) {
+        const dd = document.getElementById('requester-dropdown');
+        const q  = val.trim().toLowerCase();
+        const matches = q.length === 0
+            ? window.allUsers.slice(0, 8)
+            : window.allUsers.filter(u => u.name.toLowerCase().includes(q)).slice(0, 8);
+
+        if (matches.length === 0) { dd.style.display = 'none'; return; }
+
+        dd.innerHTML = '';
+        matches.forEach(u => {
+            const item = document.createElement('div');
+            item.style.cssText = 'padding:.5rem .75rem;cursor:pointer;font-size:.82rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center';
+            item.innerHTML = `<span style="color:var(--text);font-weight:500">${u.name}</span>`
+                           + (u.department ? `<span style="color:var(--muted);font-size:.75rem">${u.department}</span>` : '');
+            item.addEventListener('mousedown', () => {
+                document.getElementById('t-requester').value    = u.name;
+                document.getElementById('t-requester-id').value = u.id;
+                document.getElementById('t-requester-dept').value = u.department || '';
+                dd.style.display = 'none';
+            });
+            item.addEventListener('mouseover', () => item.style.background = 'var(--surface3, rgba(255,255,255,.06))');
+            item.addEventListener('mouseout',  () => item.style.background = '');
+            dd.appendChild(item);
         });
-        sel.disabled = false;
+        dd.style.display = 'block';
     }
+
+    // Clear requester_id if user types freely (not selecting from dropdown)
+    document.getElementById('t-requester').addEventListener('input', function() {
+        document.getElementById('t-requester-id').value   = '';
+        document.getElementById('t-requester-dept').value = '';
+    });
+
+    // ── Generic custom dropdown ──
+    const _cats  = ['IT Support','Network','Hardware','Software','Access & Permissions','HR','Facilities','Other'].map(v=>({val:v,label:v,sub:''}));
+    const _types = ['Incident','Service Request','Question','Change Request'].map(v=>({val:v,label:v,sub:''}));
+    const _depts = @json($_deptList).map(v=>({val:v,label:v,sub:''}));
+    let   _assigneeItems = [];
+
+    function cdBuild(dd, items, inputEl, hiddenEl, onPick) {
+        dd.innerHTML = '';
+        items.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'c-dd-item';
+            row.innerHTML = `<span class="cd-label">${item.label}</span>`
+                          + (item.sub ? `<span class="cd-sub">${item.sub}</span>` : '');
+            row.addEventListener('mousedown', () => {
+                inputEl.value  = item.label;
+                hiddenEl.value = item.val;
+                dd.style.display = 'none';
+                if (onPick) onPick(item);
+            });
+            dd.appendChild(row);
+        });
+    }
+
+    function cdOpen(inputEl, ddId, hiddenId, items, onPick) {
+        const dd  = document.getElementById(ddId);
+        const hid = document.getElementById(hiddenId);
+        const q   = inputEl.value.trim().toLowerCase();
+        const list = q ? items.filter(i => i.label.toLowerCase().includes(q)) : items;
+        if (!list.length) { dd.style.display='none'; return; }
+        cdBuild(dd, list, inputEl, hid, onPick);
+        dd.style.display = 'block';
+    }
+
+    function cdFilter(inputEl, ddId, hiddenId, items, onPick) {
+        document.getElementById(hiddenId).value = '';
+        cdOpen(inputEl, ddId, hiddenId, items, onPick);
+    }
+
+    function cdClose(ddId) {
+        const el = document.getElementById(ddId);
+        if (el) el.style.display = 'none';
+    }
+
+    // When a department is picked in Assign To, populate the assignee dropdown
+    function onDeptPick(item) {
+        _assigneeItems = [{ val:'', label:'— No specific person —', sub:'' }]
+            .concat((window.deptUsers[item.val] || []).map(n => ({ val:n, label:n, sub:'' })));
+        const asnTxt = document.getElementById('nt-asn-txt');
+        const asnHid = document.getElementById('nt-assignee');
+        asnTxt.value = '';
+        asnHid.value = '';
+        asnTxt.placeholder = 'Search assignee…';
+    }
+
     function selectPriority(el) {
         document.querySelectorAll('.priority-pill').forEach(p => p.classList.remove('selected'));
         el.classList.add('selected');
@@ -530,7 +685,17 @@ $_deptUsers = \App\Models\User::whereNotNull('department')
         const d = document.getElementById('fileNameDisplay');
         if (input.files.length) { d.textContent = '📎 ' + input.files[0].name; d.style.display='block'; }
     }
-    document.getElementById('newTicketForm').addEventListener('submit', function() {
+    document.getElementById('newTicketForm').addEventListener('submit', function(e) {
+        // Validate custom-dropdown required fields
+        if (!document.getElementById('t-category').value) {
+            e.preventDefault();
+            const inp = document.getElementById('t-cat-txt');
+            inp.style.borderColor = '#f87171';
+            inp.placeholder = 'Category is required';
+            inp.focus();
+            setTimeout(() => { inp.style.borderColor = ''; inp.placeholder = 'Search category…'; }, 2500);
+            return;
+        }
         const btn = document.getElementById('submitTicketBtn');
         btn.disabled = true;
         btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span>Submitting…';

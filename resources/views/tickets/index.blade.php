@@ -105,9 +105,9 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div style="width:25px;height:25px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white;flex-shrink:0">
-                                {{ strtoupper(substr($t->user->name ?? '?', 0, 1)) }}
+                                {{ strtoupper(substr($t->requester ?? $t->user->name ?? '?', 0, 1)) }}
                             </div>
-                            <span style="white-space:nowrap">{{ $t->user->name ?? '—' }}</span>
+                            <span style="white-space:nowrap">{{ $t->requester ?? $t->user->name ?? '—' }}</span>
                         </div>
                     </td>
                     <td><span class="badge-priority {{ $priorityMap[$t->priority] ?? 'p-low' }}">{{ ucfirst($t->priority) }}</span></td>
@@ -126,7 +126,7 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
                             $showAccept      = !$isSubmitter && !$isAssignee && $isRoutedToDept && !$alreadyAssigned;
                         @endphp
                         <div class="d-flex gap-2 justify-content-center">
-                            <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->user->name ?? "Unknown"))'>
+                            <button class="btn-view" onclick='openView(@json($t->toArray()))'>
                                 <i class="bi bi-eye me-1"></i>View
                             </button>
                             @if($showAccept)
@@ -637,15 +637,15 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
     @if(!empty($openTicket))
     document.addEventListener('DOMContentLoaded', function() {
         const _ot = @json($openTicket->load(['user','notes.user','knowledgeArticles'])->toArray());
-        openView(_ot, _ot.user?.name ?? 'Unknown');
+        openView(_ot);
     });
     @endif
 
     // ── View / Edit modal ──
-    function openView(t, requesterName) {
+    function openView(t) {
         document.getElementById('vm-number').textContent           = t.ticket_number;
         document.getElementById('vm-subject').textContent          = t.subject;
-        document.getElementById('vm-requester').textContent        = requesterName;
+        document.getElementById('vm-requester').textContent        = t.requester || (t.user?.name ?? 'Unknown');
         document.getElementById('vm-category').textContent         = t.category;
         document.getElementById('vm-type').textContent             = t.type || '—';
         document.getElementById('vm-assignee').textContent         = t.assignee || 'Unassigned';

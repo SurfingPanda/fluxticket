@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Ticket extends Model
 {
     protected $fillable = [
-        'ticket_number', 'user_id', 'subject', 'category',
-        'type', 'priority', 'assignee', 'department', 'description', 'attachment',
+        'ticket_number', 'user_id', 'requester', 'requester_id', 'requester_dept',
+        'subject', 'category', 'type', 'priority', 'assignee', 'department', 'description', 'attachment',
         'status', 'sla_due_at', 'resolution', 'resolution_image', 'resolved_by', 'resolved_at',
         'routed_to', 'routing_note', 'routed_at',
     ];

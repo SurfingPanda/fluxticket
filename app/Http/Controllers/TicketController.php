@@ -35,13 +35,16 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'subject'     => ['required', 'string', 'max:255'],
-            'category'    => ['required', 'string'],
-            'type'        => ['nullable', 'string'],
-            'priority'    => ['required', 'in:low,medium,high'],
-            'assignee'    => ['nullable', 'string'],
-            'description' => ['required', 'string'],
-            'attachment'  => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png,gif,webp'],
+            'requester'      => ['required', 'string', 'max:255'],
+            'requester_id'   => ['nullable', 'integer'],
+            'requester_dept' => ['nullable', 'string', 'max:255'],
+            'subject'        => ['required', 'string', 'max:255'],
+            'category'       => ['required', 'string'],
+            'type'           => ['nullable', 'string'],
+            'priority'       => ['required', 'in:low,medium,high'],
+            'assignee'       => ['nullable', 'string'],
+            'description'    => ['required', 'string'],
+            'attachment'     => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,txt,jpg,jpeg,png,gif,webp'],
         ]);
 
         $path = null;
@@ -52,6 +55,9 @@ class TicketController extends Controller
         $ticket = \App\Models\Ticket::create([
             'ticket_number' => \App\Models\Ticket::generateNumber($data['type'] ?? ''),
             'user_id'       => auth()->id(),
+            'requester'     => $data['requester'],
+            'requester_id'  => $data['requester_id'] ?: null,
+            'requester_dept'=> $data['requester_dept'] ?? null,
             'subject'       => $data['subject'],
             'category'      => $data['category'],
             'type'          => $data['type'] ?? null,
@@ -62,6 +68,21 @@ class TicketController extends Controller
             'status'        => 'open',
             'sla_due_at'    => \App\Models\Ticket::slaDeadline($data['priority']),
         ]);
+
+        // Log a note if the ticket was created on behalf of someone else
+        $creator = auth()->user();
+        $isOnBehalf = !empty($data['requester_id'])
+            ? (int) $data['requester_id'] !== $creator->id
+            : $data['requester'] !== $creator->name;
+
+        if ($isOnBehalf) {
+            \App\Models\TicketNote::create([
+                'ticket_id' => $ticket->id,
+                'user_id'   => $creator->id,
+                'type'      => 'note',
+                'content'   => "Ticket submitted by **{$creator->name}** on behalf of **{$data['requester']}**.",
+            ]);
+        }
 
         // Notify the assigned agent if one was specified
         if (!empty($data['assignee'])) {

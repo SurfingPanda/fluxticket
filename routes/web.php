@@ -115,6 +115,7 @@ Route::middleware('auth')->group(function () {
         // Recent activity: notes on tickets related to this user
         $relatedTicketIds = \App\Models\Ticket::where(function ($q) use ($user) {
             $q->where('user_id', $user->id)
+              ->orWhere('requester_id', $user->id)
               ->orWhere('assignee', $user->name);
             if ($user->department) {
                 $q->orWhere('department', $user->department);
@@ -142,9 +143,13 @@ Route::middleware('auth')->group(function () {
         $typeFilter = $type ? ($typeMap[$type] ?? $type) : null;
         $submitted  = request()->boolean('submitted');
         $tickets   = \App\Models\Ticket::with(['user', 'notes.user', 'knowledgeArticles'])
-            ->when($submitted, fn($q) => $q->where('user_id', $user->id),
+            ->when($submitted, fn($q) => $q->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id)
+                      ->orWhere('requester_id', $user->id);
+                }),
                 fn($q) => $q->where(function ($q) use ($user) {
                     $q->where('user_id', $user->id)
+                      ->orWhere('requester_id', $user->id)
                       ->orWhere('assignee', $user->name);
                     if ($user->department) {
                         $q->orWhere('department', $user->department);
@@ -166,6 +171,7 @@ Route::middleware('auth')->group(function () {
                 ->find((int) request('open'));
             if ($openTicket && ! $user->isSuperAdmin()
                 && $openTicket->user_id !== $user->id
+                && $openTicket->requester_id !== $user->id
                 && $openTicket->assignee !== $user->name
                 && $openTicket->department !== $user->department) {
                 $openTicket = null;
@@ -184,6 +190,7 @@ Route::middleware('auth')->group(function () {
         $tickets = \App\Models\Ticket::with('user')
             ->when(! $user->isSuperAdmin(), fn($query) => $query->where(function ($sub) use ($user) {
                 $sub->where('user_id', $user->id)
+                    ->orWhere('requester_id', $user->id)
                     ->orWhere('assignee', $user->name);
                 if ($user->department) $sub->orWhere('department', $user->department);
             }))
@@ -199,7 +206,7 @@ Route::middleware('auth')->group(function () {
             'subject'       => $t->subject,
             'status'        => $t->status,
             'priority'      => $t->priority,
-            'requester'     => $t->user->name ?? 'Unknown',
+            'requester'     => $t->requester ?? $t->user->name ?? 'Unknown',
         ]));
     })->name('tickets.search');
 
