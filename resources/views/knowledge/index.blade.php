@@ -110,6 +110,9 @@
 @section('content')
 
 @php
+$canWrite = auth()->user()->isSuperAdmin()
+    || (auth()->user()->effectivePageAccess()['knowledge_write'] ?? false);
+
 $categories = [
     ['label'=>'IT Support',   'icon'=>'bi-headset',       'color'=>'rgba(99,102,241,.15)',  'text'=>'#818cf8',  'modal'=>null],
     ['label'=>'Hardware',     'icon'=>'bi-cpu',            'color'=>'rgba(245,158,11,.15)',  'text'=>'#f59e0b',  'modal'=>null],
@@ -177,15 +180,21 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
         <h3><i class="bi bi-journals" style="color:#818cf8"></i> All Articles
             <span style="font-size:.72rem;font-weight:400;color:var(--muted);margin-left:.35rem">({{ $articles->count() }})</span>
         </h3>
+        @if($canWrite)
         <button class="btn-new-article" onclick="openKbModal('newArticleModal')">
             <i class="bi bi-plus-lg"></i> New Article
         </button>
+        @endif
     </div>
 
     @if($articles->isEmpty())
     <div class="kb-empty">
         <i class="bi bi-journals"></i>
+        @if($canWrite)
         <p>No articles yet. Click <strong>New Article</strong> to get started.</p>
+        @else
+        <p>No articles have been published yet.</p>
+        @endif
     </div>
     @else
     @php $catMap = collect($categories)->keyBy('label'); @endphp
@@ -306,7 +315,8 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
     </div>
 </div>
 
-{{-- New Article Modal --}}
+{{-- New Article Modal (only rendered for users with write access) --}}
+@if($canWrite)
 <div class="kb-modal-overlay" id="newArticleModal" onclick="closeKbModalOutside(event,'newArticleModal')">
     <div class="kb-modal">
         <div class="kb-modal-header">
@@ -365,6 +375,7 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
         </form>
     </div>
 </div>
+@endif {{-- canWrite: New Article Modal --}}
 
 {{-- Category Articles Modal --}}
 <div class="kb-modal-overlay" id="categoryArticlesModal" onclick="closeKbModalOutside(event,'categoryArticlesModal')">
@@ -389,9 +400,11 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
                 <span id="va-title" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
             </h3>
             <div style="display:flex;align-items:center;gap:.5rem;flex-shrink:0">
+                @if($canWrite)
                 <button id="va-edit-btn" class="btn-new-article" style="padding:.35rem .8rem;font-size:.76rem;display:none" onclick="openEditFromView()">
                     <i class="bi bi-pencil"></i> Edit
                 </button>
+                @endif
                 <button class="kb-modal-close" onclick="closeKbModal('viewArticleModal')"><i class="bi bi-x-lg"></i></button>
             </div>
         </div>
@@ -422,7 +435,8 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
     </div>
 </div>
 
-{{-- Edit Article Modal --}}
+{{-- Edit Article Modal (only rendered for users with write access) --}}
+@if($canWrite)
 <div class="kb-modal-overlay" id="editArticleModal" onclick="closeKbModalOutside(event,'editArticleModal')">
     <div class="kb-modal" style="max-width:560px">
         <div class="kb-modal-header">
@@ -476,6 +490,7 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
         </form>
     </div>
 </div>
+@endif {{-- canWrite: Edit Article Modal --}}
 
 {{-- Success toast --}}
 @if(session('kb_success'))
