@@ -172,7 +172,7 @@ Route::middleware('auth')->group(function () {
 
     // ── Calendar ──
     Route::get('/calendar', function () {
-        $tickets = \App\Models\Ticket::select('id','ticket_number','subject','status','priority','type','sla_due_at','created_at','assignee')
+        $tickets = \App\Models\Ticket::select('id','ticket_number','subject','status','priority','type','category','requester','department','description','sla_due_at','created_at','assignee')
             ->whereNotNull('sla_due_at')
             ->orWhereIn('status', ['open','progress'])
             ->get();
@@ -220,6 +220,7 @@ Route::middleware('auth')->group(function () {
             if ($openTicket && ! $user->isSuperAdmin()
                 && $openTicket->user_id !== $user->id
                 && $openTicket->requester_id !== $user->id
+                && $openTicket->requester !== $user->name
                 && $openTicket->assignee !== $user->name
                 && $openTicket->department !== $user->department) {
                 $openTicket = null;
@@ -298,7 +299,12 @@ Route::middleware('auth')->group(function () {
         $allowedDepts = auth()->user()->isSuperAdmin()
             ? \App\Models\SystemSetting::allDepartments()
             : auth()->user()->effectiveRoutingDepts();
-        return view('queue', compact('tickets','deptUsers','allKbas','allowedDepts') + ['activePage'=>'queue']);
+        $openTicket = null;
+        if (request('open')) {
+            $openTicket = \App\Models\Ticket::with(['user','notes.user','knowledgeArticles'])
+                ->find((int) request('open'));
+        }
+        return view('queue', compact('tickets','deptUsers','allKbas','allowedDepts','openTicket') + ['activePage'=>'queue']);
     })->name('queue');
 
     // ── Agents ──

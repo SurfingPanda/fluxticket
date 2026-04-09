@@ -1,7 +1,7 @@
 {{-- ── Notification Bell ── --}}
 <div style="position:relative" id="notifWrap">
     <button id="notifBtn" onclick="toggleNotif(event)" title="Notifications"
-        style="position:relative;background:var(--surface2);border:1px solid var(--border);border-radius:.6rem;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:.9rem;transition:background .15s,color .15s">
+        style="position:relative;background:var(--surface2);border:1px solid var(--border);border-radius:.6rem;width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:.9rem;transition:background .15s,color .15s;outline:none">
         <i class="bi bi-bell"></i>
         <span id="notifBadge" style="position:absolute;top:4px;right:4px;min-width:16px;height:16px;background:#f87171;border-radius:9999px;border:2px solid var(--surface);font-size:.55rem;font-weight:700;color:white;display:none;align-items:center;justify-content:center;padding:0 3px;line-height:1"></span>
     </button>
@@ -112,6 +112,9 @@
         });
         notifData.forEach(n => n.read_at = new Date().toISOString());
         renderNotifications();
+        // Close the dropdown
+        notifOpen = true;
+        toggleNotif();
     };
 
     window.toggleNotif = function (e) {

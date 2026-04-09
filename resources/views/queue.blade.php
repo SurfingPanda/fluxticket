@@ -264,6 +264,13 @@
 <script>
     const currentUser   = @json(auth()->user()->name);
     const currentUserId = {{ auth()->id() }};
+
+    @if(!empty($openTicket))
+    document.addEventListener('DOMContentLoaded', function () {
+        const _ot = @json($openTicket->load(['user','notes.user','knowledgeArticles'])->toArray());
+        openView(_ot, _ot.requester || (_ot.user?.name ?? 'Unknown'));
+    });
+    @endif
     window.deptUsers = @json($deptUsers->map(fn($u) => $u->pluck('name')));
     const _csrfToken = '{{ csrf_token() }}';
     let _currentTicketId = null;

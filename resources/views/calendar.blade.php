@@ -300,7 +300,7 @@ function openTicketModal(id) {
     document.getElementById('ctm-description').textContent = t.description || '—';
 
     const viewLink = document.getElementById('ctm-view-link');
-    viewLink.href = '/tickets?open=' + t.id;
+    viewLink.href = '/queue?open=' + t.id;
 
     openModal('calTicketModal');
 }
