@@ -32,7 +32,7 @@
 <div class="mb-4">
     <h5 style="font-weight:700;font-size:1.1rem;margin-bottom:.2rem">
         @php
-            $h = now()->hour;
+            $h = now('Asia/Manila')->hour;
             $greet = $h >= 18 ? 'evening' : ($h >= 12 ? 'afternoon' : ($h >= 5 ? 'morning' : 'evening'));
         @endphp
         Good {{ $greet }}, {{ auth()->user()->name ?? 'there' }} 👋

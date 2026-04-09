@@ -121,7 +121,7 @@
             <div style="overflow-y:auto;flex:1">
                 @forelse($upcoming as $t)
                 @php $due = \Carbon\Carbon::parse($t->sla_due_at); $diffHrs = now()->diffInHours($due, false); @endphp
-                <div class="event-item">
+                <div class="event-item" onclick="openTicketModal({{ $t->id }})">
                     <span class="event-dot" style="background:{{ $diffHrs < 24 ? '#f87171' : ($diffHrs < 72 ? '#fbbf24' : '#34d399') }}"></span>
                     <div style="min-width:0;flex:1">
                         <div class="event-num">{{ $t->ticket_number }}</div>
@@ -141,6 +141,10 @@
 @push('scripts')
 <script>
 const _ticketsByDate = @json($ticketsByDate);
+const _ticketMap = {};
+@foreach($tickets as $t)
+_ticketMap[{{ $t->id }}] = @json($t);
+@endforeach
 
 // Convert to flat lookup: date string → array of event objects
 const eventMap = {};
@@ -243,7 +247,7 @@ function selectDate(dateStr, events) {
         const t = e.ticket;
         const col = statusColors[t.status] || '#94a3b8';
         const kindLabel = e.kind === 'sla' ? '⏰ SLA Due' : '🎫 Created';
-        return `<div class="event-item">
+        return `<div class="event-item" onclick="openTicketModal(${t.id})" style="cursor:pointer">
             <span class="event-dot" style="background:${col}"></span>
             <div style="min-width:0;flex:1">
                 <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.15rem">
@@ -259,6 +263,48 @@ function selectDate(dateStr, events) {
 
 function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+function openTicketModal(id) {
+    const t = _ticketMap[id];
+    if (!t) return;
+
+    const statusLabel = { open:'Open', progress:'In Progress', resolved:'Resolved', closed:'Closed' };
+    const statusColor = { open:'#818cf8', progress:'#fbbf24', resolved:'#34d399', closed:'#94a3b8' };
+
+    document.getElementById('ctm-number').textContent  = t.ticket_number;
+    document.getElementById('ctm-subject').textContent = t.subject;
+
+    const badge = document.getElementById('ctm-status');
+    badge.textContent = statusLabel[t.status] || t.status;
+    badge.style.background = (statusColor[t.status] || '#94a3b8') + '22';
+    badge.style.color = statusColor[t.status] || '#94a3b8';
+
+    document.getElementById('ctm-priority').textContent   = t.priority   || '—';
+    document.getElementById('ctm-category').textContent   = t.category   || '—';
+    document.getElementById('ctm-type').textContent       = t.type       || '—';
+    document.getElementById('ctm-requester').textContent  = t.requester  || '—';
+    document.getElementById('ctm-assignee').textContent   = t.assignee   || 'Unassigned';
+    document.getElementById('ctm-department').textContent = t.department || '—';
+    document.getElementById('ctm-created').textContent    = t.created_at ? new Date(t.created_at).toLocaleString() : '—';
+
+    const slaEl = document.getElementById('ctm-sla');
+    if (t.sla_due_at) {
+        const due = new Date(t.sla_due_at);
+        const hrs  = (due - new Date()) / 3600000;
+        slaEl.textContent = due.toLocaleString() + (hrs > 0 ? ' (' + (hrs < 24 ? Math.round(hrs) + 'h left' : Math.round(hrs/24) + 'd left') + ')' : ' (overdue)');
+        slaEl.style.color = hrs < 0 ? '#f87171' : (hrs < 24 ? '#fbbf24' : 'var(--text)');
+    } else {
+        slaEl.textContent = '—';
+        slaEl.style.color = 'var(--text)';
+    }
+
+    document.getElementById('ctm-description').textContent = t.description || '—';
+
+    const viewLink = document.getElementById('ctm-view-link');
+    viewLink.href = '/tickets?open=' + t.id;
+
+    openModal('calTicketModal');
+}
+
 document.getElementById('prevBtn').addEventListener('click', () => {
     currentMonth--;
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
@@ -271,5 +317,47 @@ document.getElementById('nextBtn').addEventListener('click', () => {
 });
 
 init();
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal('calTicketModal'); });
 </script>
+@endpush
+
+@push('modals')
+<div class="flux-modal-backdrop" id="calTicketModal" onclick="if(event.target===this)closeModal('calTicketModal')">
+    <div class="flux-modal" style="max-width:560px">
+        <div class="flux-modal-header">
+            <div>
+                <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.25rem">
+                    <span style="font-size:.72rem;font-weight:700;font-family:monospace;color:#818cf8" id="ctm-number"></span>
+                    <span id="ctm-status" style="font-size:.68rem;font-weight:700;border-radius:.35rem;padding:.1rem .55rem"></span>
+                </div>
+                <div id="ctm-subject" style="font-size:.95rem;font-weight:700;color:var(--text)"></div>
+            </div>
+            <button onclick="closeModal('calTicketModal')" style="background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.85rem;flex-shrink:0">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="flux-modal-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem 1.25rem;margin-bottom:1.25rem">
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">Priority</div><div style="font-size:.875rem;color:var(--text);font-weight:500" id="ctm-priority"></div></div>
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">Category</div><div style="font-size:.875rem;color:var(--text);font-weight:500" id="ctm-category"></div></div>
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">Type</div><div style="font-size:.875rem;color:var(--text);font-weight:500" id="ctm-type"></div></div>
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">Requester</div><div style="font-size:.875rem;color:var(--text);font-weight:500" id="ctm-requester"></div></div>
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">Assignee</div><div style="font-size:.875rem;color:var(--text);font-weight:500" id="ctm-assignee"></div></div>
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">Department</div><div style="font-size:.875rem;color:var(--text);font-weight:500" id="ctm-department"></div></div>
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">Created</div><div style="font-size:.875rem;color:var(--text);font-weight:500" id="ctm-created"></div></div>
+                <div><div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.2rem">SLA Due</div><div style="font-size:.875rem;font-weight:500" id="ctm-sla"></div></div>
+            </div>
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem">Description<span style="flex:1;height:1px;background:var(--border)"></span></div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:.75rem;padding:.85rem 1rem;font-size:.85rem;color:var(--text);line-height:1.6;white-space:pre-wrap" id="ctm-description"></div>
+        </div>
+        <div class="flux-modal-footer">
+            <button class="btn-cancel" onclick="closeModal('calTicketModal')">Close</button>
+            <a id="ctm-view-link" href="#"
+               style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.3);border-radius:.6rem;color:#818cf8;font-size:.875rem;font-weight:600;padding:.5rem 1.25rem;display:flex;align-items:center;gap:.4rem;text-decoration:none">
+                <i class="bi bi-box-arrow-up-right"></i> View Full Ticket
+            </button>
+        </div>
+    </div>
+</div>
 @endpush
