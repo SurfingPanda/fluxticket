@@ -223,13 +223,14 @@
         <div style="max-height:310px;overflow-y:auto;">
             @forelse($recentActivity as $a)
             @php
-                $isRoute = $a->type === 'route_event';
-                $icon    = $isRoute ? 'bi-arrow-left-right' : 'bi-chat-left-text-fill';
-                $color   = $isRoute ? 'rgba(251,191,36,.12)' : 'rgba(99,102,241,.15)';
-                $ic      = $isRoute ? '#fbbf24' : '#818cf8';
+                $isRoute     = $a->type === 'route_event';
+                $isRejection = $a->type === 'rejection';
+                $icon    = $isRoute ? 'bi-arrow-left-right' : ($isRejection ? 'bi-x-circle-fill' : 'bi-chat-left-text-fill');
+                $color   = $isRoute ? 'rgba(251,191,36,.12)' : ($isRejection ? 'rgba(248,113,113,.12)' : 'rgba(99,102,241,.15)');
+                $ic      = $isRoute ? '#fbbf24' : ($isRejection ? '#f87171' : '#818cf8');
                 $num     = $a->ticket->ticket_number ?? '—';
-                $who     = $a->user->name ?? 'Someone';
-                $action  = $isRoute ? "routed ticket <b>{$num}</b>" : "added a note on <b>{$num}</b>";
+                $who     = $isRejection ? 'System' : ($a->user->name ?? 'Someone');
+                $action  = $isRoute ? "routed ticket <b>{$num}</b>" : ($isRejection ? "rejected ticket <b>{$num}</b>" : "added a note on <b>{$num}</b>");
             @endphp
             <div class="activity-item">
                 <div class="activity-dot" style="background:{{ $color }}">

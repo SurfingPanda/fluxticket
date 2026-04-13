@@ -328,6 +328,7 @@
         document.getElementById('routeForm').submit();
     }
     let _currentTicketStatus = null;
+    let _currentTicketNum    = null;
     const _notesCache    = {};   // ticketId → notes[] (keeps notes after AJAX add)
     const _kbaCache      = {};   // ticketId → kba[]   (keeps KBAs after attach/detach)
     const _allKbas = @json($allKbas ?? []);
@@ -482,12 +483,16 @@
     }
 
     function renderNoteHtml(n) {
-        const isRoute  = n.type === 'route_event';
-        const initial  = (n.user?.name || '?').charAt(0).toUpperCase();
+        const isRoute     = n.type === 'route_event';
+        const isRejection = n.type === 'rejection';
         const dateStr  = new Date(n.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
         const rawBody  = (n.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-            .replace(/^&gt; (.+)$/gm,'<div style="border-left:3px solid rgba(99,102,241,.3);padding-left:.6rem;color:var(--muted);margin-top:.3rem;font-size:.8rem">$1</div>');
+            .replace(/^&gt; (.+)$/gm,'<div style="border-left:3px solid rgba(248,113,113,.3);padding-left:.6rem;color:var(--muted);margin-top:.3rem;font-size:.8rem">$1</div>');
+        if (isRejection) {
+            return `<div style="display:flex;gap:.7rem;margin-bottom:.85rem"><div style="width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#1a1a2e;background:linear-gradient(135deg,#f59e0b,#d97706)">SYS</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.3rem"><span style="font-size:.8rem;font-weight:600;color:#fbbf24">System</span><span style="font-size:.63rem;font-weight:700;text-transform:uppercase;background:rgba(248,113,113,.15);color:#f87171;padding:.1rem .45rem;border-radius:9999px"><i class="bi bi-x-circle-fill"></i> Rejected</span><span style="font-size:.7rem;color:var(--muted)">${dateStr}</span></div><div style="font-size:.83rem;color:var(--text);line-height:1.55;background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);border-radius:.5rem;padding:.55rem .8rem">${rawBody}</div></div></div>`;
+        }
+        const initial  = (n.user?.name || '?').charAt(0).toUpperCase();
         const avatarBg = isRoute ? 'linear-gradient(135deg,#2563eb,#4f46e5)' : 'linear-gradient(135deg,#4f46e5,#7c3aed)';
         const chip     = isRoute
             ? `<span style="font-size:.63rem;font-weight:700;text-transform:uppercase;background:rgba(59,130,246,.15);color:#60a5fa;padding:.1rem .45rem;border-radius:9999px"><i class="bi bi-arrow-left-right"></i> Routed</span>`
@@ -539,7 +544,7 @@
         }
     }
 
-    document.addEventListener('keydown', e => { if(e.key==='Escape') ['viewModal','routeModal'].forEach(closeModal); });
+    document.addEventListener('keydown', e => { if(e.key==='Escape') ['viewModal','routeModal','rejectModal'].forEach(closeModal); });
 
     // ── Filter (saveable) ──
     const _FKEY = 'flux_filter_queue';
@@ -619,8 +624,8 @@
     function openView(t, requesterName) {
         document.getElementById('vm-number').textContent  = t.ticket_number;
         document.getElementById('vm-subject').textContent = t.subject;
-        const sMap = { open:'s-open', progress:'s-progress', resolved:'s-resolved', closed:'s-closed' };
-        const sLabel = { open:'Open', progress:'In Progress', resolved:'Resolved', closed:'Closed' };
+        const sMap = { open:'s-open', progress:'s-progress', resolved:'s-resolved', closed:'s-closed', rejected:'s-rejected' };
+        const sLabel = { open:'Open', progress:'In Progress', resolved:'Resolved', closed:'Closed', rejected:'Rejected' };
         const sb = document.getElementById('vm-status-badge');
         sb.className = 'badge-status ' + (sMap[t.status]||'s-open');
         sb.textContent = sLabel[t.status]||t.status;
@@ -635,14 +640,31 @@
         const resSection = document.getElementById('vm-resolution-section');
         if (t.resolution) { resSection.style.display=''; document.getElementById('vm-resolution').textContent=t.resolution; } else { resSection.style.display='none'; }
         const isAssignee = t.assignee && t.assignee === currentUser;
-        const isDone     = ['resolved', 'closed'].includes(t.status);
+        const isDone     = ['resolved', 'closed', 'rejected'].includes(t.status);
+        const isRejected = t.status === 'rejected';
         const editSection = document.getElementById('vm-edit-section');
         const saveBtn = document.getElementById('vm-save-btn');
         const routeBtn = document.getElementById('vm-route-btn');
-        editSection.style.display = isAssignee ? '' : 'none';
-        saveBtn.style.display     = isAssignee ? '' : 'none';
+        const rejectBtn = document.getElementById('vm-reject-btn');
+        editSection.style.display = (isAssignee && !isRejected) ? '' : 'none';
+        saveBtn.style.display     = (isAssignee && !isRejected) ? '' : 'none';
         routeBtn.style.display    = (isAssignee && !isDone) ? '' : 'none';
-        if (isAssignee) {
+        rejectBtn.style.display   = (isAssignee && !isDone) ? 'flex' : 'none';
+        // Store ticket number for reject modal
+        _currentTicketNum = t.ticket_number;
+        // Rejection info
+        const rejectedByRow = document.getElementById('vm-rejected-by-row');
+        const rejectionSection = document.getElementById('vm-rejection-section');
+        if (isRejected) {
+            rejectedByRow.style.display = '';
+            document.getElementById('vm-rejected-by').textContent = t.rejected_by || '—';
+            rejectionSection.style.display = '';
+            document.getElementById('vm-rejection-reason').textContent = t.rejection_reason || '';
+        } else {
+            rejectedByRow.style.display = 'none';
+            rejectionSection.style.display = 'none';
+        }
+        if (isAssignee && !isRejected) {
             document.getElementById('editTicketForm').action = '/tickets/' + t.id;
             document.getElementById('vm-status-sel').value    = t.status;
             document.getElementById('vm-assignee-inp').value  = t.assignee || '';
@@ -661,8 +683,8 @@
               slaPctLabel=document.getElementById('vm-sla-pct-label'), slaTimeLabel=document.getElementById('vm-sla-time-label');
         if (t.sla_due_at) {
             const due=new Date(t.sla_due_at), created=new Date(t.created_at), now=new Date();
-            const isDone=['resolved','closed'].includes(t.status);
-            const compareAt=isDone&&t.resolved_at?new Date(t.resolved_at):now;
+            const isDone=['resolved','closed','rejected'].includes(t.status);
+            const compareAt=isDone&&(t.resolved_at||t.rejected_at)?new Date(t.resolved_at||t.rejected_at):now;
             let ss; if(compareAt>due) ss='breached'; else if(isDone) ss='met'; else { const total=due-created,rem=due-now; ss=(rem/total)<=0.25?'warning':'ok'; }
             slaDue.textContent=new Date(t.sla_due_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
             slaBadge.innerHTML=`<span class="sla-badge sla-${ss}"><span class="sla-dot"></span>${slaLabels[ss]}</span>`;
@@ -713,6 +735,26 @@
         document.getElementById('route-dept').value='';
         const ps=document.getElementById('route-person'); ps.innerHTML='<option value="" disabled selected>Select department first…</option>'; ps.disabled=true;
         closeModal('viewModal'); openModal('routeModal');
+    }
+
+    function openRejectModal(ticketId, ticketNum) {
+        _currentTicketId  = ticketId;
+        _currentTicketNum = ticketNum;
+        document.getElementById('reject-sub').textContent    = ticketNum + ' — Enter reason for rejection';
+        document.getElementById('rejectForm').action         = '/tickets/' + ticketId + '/reject';
+        document.getElementById('reject-reason').value       = '';
+        openModal('rejectModal');
+    }
+
+    function openRejectFromView() {
+        closeModal('viewModal');
+        openRejectModal(_currentTicketId, _currentTicketNum || '');
+    }
+
+    function submitReject() {
+        const reason = document.getElementById('reject-reason').value.trim();
+        if (!reason) { document.getElementById('reject-reason').focus(); return; }
+        document.getElementById('rejectForm').submit();
     }
 
     function loadRouteDeptUsers(dept) {

@@ -246,7 +246,7 @@ class TicketController extends Controller
         \App\Models\TicketNote::create([
             'ticket_id' => $ticket->id,
             'user_id'   => auth()->id(),
-            'type'      => 'status_change',
+            'type'      => 'rejection',
             'content'   => "Ticket **rejected** by **" . auth()->user()->name . "**\n> {$data['rejection_reason']}",
         ]);
 
