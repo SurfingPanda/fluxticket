@@ -485,12 +485,16 @@
     function renderNoteHtml(n) {
         const isRoute     = n.type === 'route_event';
         const isRejection = n.type === 'rejection';
+        const isSystem    = n.type === 'system';
         const dateStr  = new Date(n.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
         const rawBody  = (n.content||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
             .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
             .replace(/^&gt; (.+)$/gm,'<div style="border-left:3px solid rgba(248,113,113,.3);padding-left:.6rem;color:var(--muted);margin-top:.3rem;font-size:.8rem">$1</div>');
         if (isRejection) {
             return `<div style="display:flex;gap:.7rem;margin-bottom:.85rem"><div style="width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#1a1a2e;background:linear-gradient(135deg,#f59e0b,#d97706)">SYS</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.3rem"><span style="font-size:.8rem;font-weight:600;color:#fbbf24">System</span><span style="font-size:.63rem;font-weight:700;text-transform:uppercase;background:rgba(248,113,113,.15);color:#f87171;padding:.1rem .45rem;border-radius:9999px"><i class="bi bi-x-circle-fill"></i> Rejected</span><span style="font-size:.7rem;color:var(--muted)">${dateStr}</span></div><div style="font-size:.83rem;color:var(--text);line-height:1.55;background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.25);border-radius:.5rem;padding:.55rem .8rem">${rawBody}</div></div></div>`;
+        }
+        if (isSystem) {
+            return `<div style="display:flex;gap:.7rem;margin-bottom:.85rem"><div style="width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#1a1a2e;background:linear-gradient(135deg,#f59e0b,#d97706)">SYS</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.3rem"><span style="font-size:.8rem;font-weight:600;color:#fbbf24">System</span><span style="font-size:.63rem;font-weight:700;text-transform:uppercase;background:rgba(251,191,36,.12);color:#fbbf24;padding:.1rem .45rem;border-radius:9999px"><i class="bi bi-info-circle-fill"></i> System</span><span style="font-size:.7rem;color:var(--muted)">${dateStr}</span></div><div style="font-size:.83rem;color:var(--text);line-height:1.55;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.18);border-radius:.5rem;padding:.55rem .8rem">${rawBody}</div></div></div>`;
         }
         const initial  = (n.user?.name || '?').charAt(0).toUpperCase();
         const avatarBg = isRoute ? 'linear-gradient(135deg,#2563eb,#4f46e5)' : 'linear-gradient(135deg,#4f46e5,#7c3aed)';

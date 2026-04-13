@@ -79,7 +79,7 @@ class TicketController extends Controller
             \App\Models\TicketNote::create([
                 'ticket_id' => $ticket->id,
                 'user_id'   => $creator->id,
-                'type'      => 'note',
+                'type'      => 'system',
                 'content'   => "Ticket submitted by **{$creator->name}** on behalf of **{$data['requester']}**.",
             ]);
         }
