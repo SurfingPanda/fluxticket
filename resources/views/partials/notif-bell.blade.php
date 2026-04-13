@@ -49,6 +49,17 @@
             badge.style.display = 'none';
         }
 
+        // Update My Queue sidebar badge
+        const queueBadge = document.getElementById('queueNotifBadge');
+        if (queueBadge) {
+            if (unread > 0) {
+                queueBadge.textContent  = unread > 9 ? '9+' : unread;
+                queueBadge.style.display = 'flex';
+            } else {
+                queueBadge.style.display = 'none';
+            }
+        }
+
         if (!notifData.length) {
             list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:.82rem"><i class="bi bi-bell-slash" style="font-size:1.5rem;display:block;margin-bottom:.5rem;opacity:.4"></i>No notifications yet</div>';
             return;

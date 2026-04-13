@@ -296,6 +296,7 @@
         <div class="nav-submenu" id="ticketsSubmenu">
             <a class="nav-item-link nav-sub-item {{ $ap==='queue'?'active':'' }}" href="{{ route('queue') }}">
                 <i class="bi bi-clock-history nav-icon" style="font-size:.85rem"></i><span class="nav-text">My Queue</span>
+                <span id="queueNotifBadge" style="display:none;margin-left:auto;min-width:18px;height:18px;background:#f87171;border-radius:9999px;font-size:.6rem;font-weight:700;color:white;align-items:center;justify-content:center;padding:0 4px;line-height:1;flex-shrink:0"></span>
             </a>
         </div>
 
