@@ -271,6 +271,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/tickets/{ticket}/route', [\App\Http\Controllers\TicketController::class, 'route'])
         ->name('tickets.route');
 
+    Route::post('/tickets/{ticket}/reject', [\App\Http\Controllers\TicketController::class, 'reject'])
+        ->name('tickets.reject');
+
     Route::post('/tickets/{ticket}/notes', [\App\Http\Controllers\TicketController::class, 'addNote'])
         ->name('tickets.notes.store');
 

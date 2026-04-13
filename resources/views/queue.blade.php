@@ -17,6 +17,9 @@
     .sla-breached .sla-dot { background:#f87171; } .sla-met .sla-dot { background:#818cf8; }
     .btn-view { background:var(--surface2); border:1px solid var(--border); border-radius:.45rem; padding:.25rem .7rem; font-size:.72rem; font-weight:600; color:var(--muted); cursor:pointer; transition:all .15s; white-space:nowrap; }
     .btn-view:hover { background:rgba(99,102,241,.15); border-color:rgba(99,102,241,.4); color:#818cf8; }
+    .btn-reject { background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.25); border-radius:.45rem; padding:.25rem .7rem; font-size:.72rem; font-weight:600; color:#f87171; cursor:pointer; transition:all .15s; white-space:nowrap; }
+    .btn-reject:hover { background:rgba(248,113,113,.2); border-color:rgba(248,113,113,.5); }
+    .s-rejected { background:rgba(248,113,113,.12); color:#f87171; border:1px solid rgba(248,113,113,.25); }
     .btn-new { background:linear-gradient(135deg,#4f46e5,#7c3aed); border:none; border-radius:.6rem; color:white; font-weight:600; font-size:.8rem; padding:.45rem 1rem; display:flex; align-items:center; gap:.4rem; transition:opacity .2s,transform .15s; box-shadow:0 3px 12px rgba(99,102,241,.35); cursor:pointer; text-decoration:none !important; }
     .btn-new:hover { opacity:.9; transform:translateY(-1px); color:white; }
     .priority-pill.selected[data-val="low"]    { border-color:#34d399 !important; box-shadow:0 0 0 3px rgba(52,211,153,.18); }
@@ -47,7 +50,7 @@
 
 @section('content')
 @php
-    $statusMap   = ['open'=>['s-open','Open'],'progress'=>['s-progress','In Progress'],'resolved'=>['s-resolved','Resolved'],'closed'=>['s-closed','Closed']];
+    $statusMap   = ['open'=>['s-open','Open'],'progress'=>['s-progress','In Progress'],'resolved'=>['s-resolved','Resolved'],'closed'=>['s-closed','Closed'],'rejected'=>['s-rejected','Rejected']];
     $priorityMap = ['high'=>'p-high','medium'=>'p-medium','low'=>'p-low'];
 @endphp
 
@@ -127,9 +130,16 @@
                     <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">{{ $t->created_at->diffForHumans() }}</td>
                     <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">{{ $t->updated_at->diffForHumans() }}</td>
                     <td style="text-align:center">
-                        <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->requester ?? $t->user->name ?? "Unknown"))'>
-                            <i class="bi bi-eye me-1"></i>View
-                        </button>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:.4rem">
+                            <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->requester ?? $t->user->name ?? "Unknown"))'>
+                                <i class="bi bi-eye me-1"></i>View
+                            </button>
+                            @if(!in_array($t->status, ['resolved','closed','rejected']))
+                            <button class="btn-reject" onclick="openRejectModal({{ $t->id }}, '{{ addslashes($t->ticket_number) }}')">
+                                <i class="bi bi-x-circle me-1"></i>Reject
+                            </button>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @endforeach
@@ -163,6 +173,7 @@
                 <div class="info-item"><div class="info-label">Created</div><div class="info-val" id="vm-created"></div></div>
                 <div class="info-item"><div class="info-label">Assigned To</div><div class="info-val" id="vm-assignee"></div></div>
                 <div class="info-item"><div class="info-label">Resolved By</div><div class="info-val" id="vm-resolved-by"></div></div>
+                <div class="info-item" id="vm-rejected-by-row" style="display:none"><div class="info-label" style="color:#f87171">Rejected By</div><div class="info-val" style="color:#f87171" id="vm-rejected-by"></div></div>
                 <div class="info-item"><div class="info-label">SLA Deadline</div><div class="info-val" id="vm-sla-due"></div></div>
                 <div class="info-item"><div class="info-label">SLA Status</div><div id="vm-sla-badge"></div></div>
             </div>
@@ -176,6 +187,10 @@
             <div id="vm-resolution-section" style="display:none">
                 <div class="modal-section">Resolution</div>
                 <div class="resolution-box" id="vm-resolution"></div>
+            </div>
+            <div id="vm-rejection-section" style="display:none">
+                <div class="modal-section" style="color:#f87171">Rejection Reason</div>
+                <div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:.75rem;padding:.85rem 1rem;font-size:.85rem;color:#f87171;line-height:1.6;white-space:pre-wrap" id="vm-rejection-reason"></div>
             </div>
             <div id="vm-edit-section" style="display:none">
                 <div class="modal-section">Update Ticket</div>
@@ -222,8 +237,39 @@
         <div class="flux-modal-footer">
             <button class="btn-cancel" onclick="closeModal('viewModal')">Close</button>
             <a id="vm-print-btn" href="#" target="_blank" class="btn-ghost"><i class="bi bi-printer"></i> Print / PDF</a>
+            <button id="vm-reject-btn" onclick="openRejectFromView()" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:.6rem;color:#f87171;font-size:.875rem;font-weight:600;padding:.5rem 1rem;align-items:center;gap:.4rem;cursor:pointer"><i class="bi bi-x-circle"></i> Reject</button>
             <button id="vm-route-btn" onclick="openRouteFromView()" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:.6rem;color:#fbbf24;font-size:.875rem;font-weight:600;padding:.5rem 1rem;display:flex;align-items:center;gap:.4rem;cursor:pointer"><i class="bi bi-arrow-left-right"></i> Route</button>
             <button id="vm-save-btn" class="btn-submit" style="display:none" onclick="document.getElementById('editTicketForm').submit()"><i class="bi bi-floppy"></i> Save Changes</button>
+        </div>
+    </div>
+</div>
+
+{{-- Reject Confirmation Modal --}}
+<div class="flux-modal-backdrop" id="rejectModal" onclick="if(event.target===this)closeModal('rejectModal')">
+    <div class="flux-modal" style="max-width:440px">
+        <div class="flux-modal-header">
+            <div>
+                <div style="font-size:.95rem;font-weight:700;color:#f87171">Reject Ticket</div>
+                <div id="reject-sub" style="font-size:.75rem;color:var(--muted)"></div>
+            </div>
+            <button onclick="closeModal('rejectModal')" style="background:var(--surface2);border:1px solid var(--border);border-radius:.5rem;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.85rem"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="flux-modal-body">
+            <div style="background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);border-radius:.75rem;padding:.75rem 1rem;font-size:.82rem;color:#f87171;margin-bottom:1rem;display:flex;align-items:flex-start;gap:.5rem">
+                <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;margin-top:.1rem"></i>
+                <span>This will permanently reject the ticket and stop the SLA timer. This action cannot be undone.</span>
+            </div>
+            <form id="rejectForm" method="POST">
+                @csrf
+                <div class="m-field" style="margin-bottom:0">
+                    <label class="m-label">Reason for Rejection <span style="color:#f87171">*</span></label>
+                    <textarea class="m-textarea" name="rejection_reason" id="reject-reason" placeholder="Explain why this ticket is being rejected…" required style="min-height:90px"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="flux-modal-footer">
+            <button class="btn-cancel" onclick="closeModal('rejectModal')">Cancel</button>
+            <button type="button" onclick="submitReject()" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:.6rem;color:#f87171;font-size:.875rem;font-weight:600;padding:.5rem 1.25rem;cursor:pointer;display:flex;align-items:center;gap:.4rem"><i class="bi bi-x-circle-fill"></i> Confirm Reject</button>
         </div>
     </div>
 </div>

@@ -230,6 +230,33 @@ class TicketController extends Controller
         return back()->with('success', "Ticket {$ticket->ticket_number} routed to {$data['routed_to']} ({$data['department']}).");
     }
 
+    public function reject(Request $request, \App\Models\Ticket $ticket)
+    {
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $ticket->status           = 'rejected';
+        $ticket->rejected_by      = auth()->user()->name;
+        $ticket->rejected_at      = now();
+        $ticket->rejection_reason = $data['rejection_reason'];
+        $ticket->save();
+
+        // Log rejection in notes timeline
+        \App\Models\TicketNote::create([
+            'ticket_id' => $ticket->id,
+            'user_id'   => auth()->id(),
+            'type'      => 'status_change',
+            'content'   => "Ticket **rejected** by **" . auth()->user()->name . "**\n> {$data['rejection_reason']}",
+        ]);
+
+        // Notify the ticket submitter
+        $this->notify($ticket->user_id, 'status_changed', $ticket,
+            "Your ticket {$ticket->ticket_number} has been rejected by " . auth()->user()->name . ".");
+
+        return back()->with('success', "Ticket {$ticket->ticket_number} has been rejected.");
+    }
+
     public function addNote(Request $request, \App\Models\Ticket $ticket)
     {
         $data = $request->validate([

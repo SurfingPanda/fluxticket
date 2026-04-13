@@ -10,13 +10,15 @@ class Ticket extends Model
         'ticket_number', 'user_id', 'requester', 'requester_id', 'requester_dept',
         'subject', 'category', 'type', 'priority', 'assignee', 'department', 'description', 'attachment',
         'status', 'sla_due_at', 'resolution', 'resolution_image', 'resolved_by', 'resolved_at',
+        'rejected_by', 'rejected_at', 'rejection_reason',
         'routed_to', 'routing_note', 'routed_at',
     ];
 
     protected $casts = [
-        'resolved_at' => 'datetime',
-        'routed_at'   => 'datetime',
-        'sla_due_at'  => 'datetime',
+        'resolved_at'  => 'datetime',
+        'rejected_at'  => 'datetime',
+        'routed_at'    => 'datetime',
+        'sla_due_at'   => 'datetime',
     ];
 
     /** SLA deadline in days per priority */
@@ -44,8 +46,8 @@ class Ticket extends Model
     {
         if (!$this->sla_due_at) return 'ok';
 
-        $done = in_array($this->status, ['resolved', 'closed']);
-        $compareAt = $done ? ($this->resolved_at ?? now()) : now();
+        $done = in_array($this->status, ['resolved', 'closed', 'rejected']);
+        $compareAt = $done ? ($this->resolved_at ?? $this->rejected_at ?? now()) : now();
 
         if ($compareAt->gt($this->sla_due_at)) {
             return $done ? 'breached' : 'breached';
