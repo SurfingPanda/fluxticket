@@ -938,8 +938,9 @@ function globalSearch(q) {
             if (!results.length) {
                 drop.innerHTML = '<div style="padding:.65rem 1rem;font-size:.8rem;color:var(--muted)">No tickets found.</div>';
             } else {
+                const _basePath = '/queue';
                 drop.innerHTML = results.map(t => `
-                    <a href="/tickets?open=${t.id}" style="display:flex;align-items:center;gap:.7rem;padding:.55rem 1rem;text-decoration:none;border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+                    <a href="${_basePath}?open=${t.id}" style="display:flex;align-items:center;gap:.7rem;padding:.55rem 1rem;text-decoration:none;border-bottom:1px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
                         <div style="width:28px;height:28px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:.35rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">
                             <i class="bi bi-ticket-perforated-fill" style="color:#fff;font-size:.65rem"></i>
                         </div>
