@@ -232,6 +232,11 @@ class TicketController extends Controller
 
     public function reject(Request $request, \App\Models\Ticket $ticket)
     {
+        $user = auth()->user();
+        if ($ticket->assignee !== $user->name && $ticket->requester_id !== $user->id) {
+            abort(403, 'Only the requester or assigned technician may reject this ticket.');
+        }
+
         $data = $request->validate([
             'rejection_reason' => ['required', 'string', 'max:1000'],
         ]);

@@ -95,7 +95,7 @@
             </thead>
             <tbody>
                 @foreach($tickets as $t)
-                <tr data-status="{{ $t->status }}" data-priority="{{ $t->priority }}" data-search="{{ strtolower($t->ticket_number . ' ' . $t->subject . ' ' . ($t->user->name ?? '') . ' ' . $t->category . ' ' . ($t->type ?? '')) }}">
+                <tr data-status="{{ $t->status }}" data-priority="{{ $t->priority }}" data-search="{{ strtolower($t->ticket_number . ' ' . $t->subject . ' ' . ($t->requester ?? $t->user->name ?? '') . ' ' . $t->category . ' ' . ($t->type ?? '')) }}">
                     <td><span style="font-size:.72rem;font-weight:700;color:#818cf8;font-family:monospace">{{ $t->ticket_number }}</span></td>
                     <td style="max-width:200px">
                         <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $t->subject }}</div>
@@ -103,8 +103,8 @@
                     </td>
                     <td>
                         <div style="display:flex;align-items:center;gap:.5rem">
-                            <div style="width:25px;height:25px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white;flex-shrink:0">{{ strtoupper(substr($t->user->name ?? '?', 0, 1)) }}</div>
-                            <span style="white-space:nowrap">{{ $t->user->name ?? '—' }}</span>
+                            <div style="width:25px;height:25px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white;flex-shrink:0">{{ strtoupper(substr($t->requester ?? $t->user->name ?? '?', 0, 1)) }}</div>
+                            <span style="white-space:nowrap">{{ $t->requester ?? $t->user->name ?? '—' }}</span>
                         </div>
                     </td>
                     <td><span class="badge-priority {{ $priorityMap[$t->priority] ?? 'p-low' }}">{{ ucfirst($t->priority) }}</span></td>
@@ -114,7 +114,7 @@
                     <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">{{ $t->created_at->diffForHumans() }}</td>
                     <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">{{ $t->updated_at->diffForHumans() }}</td>
                     <td style="text-align:center">
-                        <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->user->name ?? "Unknown"))'>
+                        <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->requester ?? $t->user->name ?? "Unknown"))'>
                             <i class="bi bi-eye me-1"></i>View
                         </button>
                     </td>

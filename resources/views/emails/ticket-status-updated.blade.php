@@ -17,7 +17,7 @@
             <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
               <tr>
                 <td style="vertical-align:middle;padding-right:10px;">
-                  <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}"
+                  <img src="{{ asset('Image/logo.png') }}"
                        alt="FluxTickets"
                        width="44" height="44"
                        style="display:block;filter:drop-shadow(0 2px 6px rgba(180,20,40,.5));">

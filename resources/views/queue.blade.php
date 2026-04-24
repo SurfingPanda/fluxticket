@@ -134,7 +134,7 @@
                             <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->requester ?? $t->user->name ?? "Unknown"))'>
                                 <i class="bi bi-eye me-1"></i>View
                             </button>
-                            @if(!in_array($t->status, ['resolved','closed','rejected']))
+                            @if(!in_array($t->status, ['resolved','closed','rejected']) && ($t->assignee === auth()->user()->name || $t->requester_id === auth()->id()))
                             <button class="btn-reject" onclick="openRejectModal({{ $t->id }}, '{{ addslashes($t->ticket_number) }}')">
                                 <i class="bi bi-x-circle me-1"></i>Reject
                             </button>
@@ -644,6 +644,7 @@
         const resSection = document.getElementById('vm-resolution-section');
         if (t.resolution) { resSection.style.display=''; document.getElementById('vm-resolution').textContent=t.resolution; } else { resSection.style.display='none'; }
         const isAssignee = t.assignee && t.assignee === currentUser;
+        const isRequester = t.requester_id === currentUserId;
         const isDone     = ['resolved', 'closed', 'rejected'].includes(t.status);
         const isRejected = t.status === 'rejected';
         const editSection = document.getElementById('vm-edit-section');
@@ -653,7 +654,7 @@
         editSection.style.display = (isAssignee && !isRejected) ? '' : 'none';
         saveBtn.style.display     = (isAssignee && !isRejected) ? '' : 'none';
         routeBtn.style.display    = (isAssignee && !isDone) ? '' : 'none';
-        rejectBtn.style.display   = (isAssignee && !isDone) ? 'flex' : 'none';
+        rejectBtn.style.display   = ((isAssignee || isRequester) && !isDone) ? 'flex' : 'none';
         // Store ticket number for reject modal
         _currentTicketNum = t.ticket_number;
         // Rejection info

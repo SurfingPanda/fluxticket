@@ -81,15 +81,59 @@
         .doc-footer span { font-size: .68rem; color: #94a3b8; }
 
         /* ── Print styles ── */
+        @page { size: landscape; margin: 0.35in; }
         @media print {
-            body { font-size: 10pt; }
+            body { font-size: 8pt; }
             .screen-wrap { margin: 0; padding: 0; max-width: 100%; }
             .print-toolbar { display: none !important; }
             .doc { border: none; border-radius: 0; }
-            .doc-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .status-strip { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .sig-section { page-break-inside: avoid; }
+
+            /* Header */
+            .doc-header { padding: .55rem 1.1rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .logo-icon { width: 28px; height: 28px; font-size: .85rem; border-radius: .45rem; }
+            .logo-name { font-size: .95rem; }
+            .logo-sub  { font-size: .6rem; margin-top: .05rem; }
+            .doc-ticket-id .tid   { font-size: .95rem; }
+            .doc-ticket-id .tdate { font-size: .6rem; margin-top: .1rem; }
+
+            /* Status strip */
+            .status-strip { padding: .35rem 1.1rem; gap: 1rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .strip-item  { font-size: .68rem; }
+            .strip-label { font-size: .55rem; }
+            .badge       { font-size: .6rem; padding: .12rem .5rem; }
+
+            /* Body */
+            .doc-body { padding: .75rem 1.1rem; }
+            .doc-body h2 { font-size: .9rem !important; margin-bottom: .5rem !important; padding-bottom: .3rem !important; border-bottom-width: 1px !important; }
+            .section-title { font-size: .58rem; margin-bottom: .3rem; }
+
+            /* Info grid — 4 columns in landscape to save vertical space */
+            .info-grid { grid-template-columns: 1fr 1fr 1fr 1fr; gap: .2rem .9rem; margin-bottom: .55rem; }
+            .info-row  { padding: .15rem 0; }
+            .info-row .lbl { font-size: .52rem; margin-bottom: .02rem; }
+            .info-row .val { font-size: .7rem; }
+
+            /* Content boxes */
+            .content-box { padding: .4rem .6rem; font-size: .7rem; line-height: 1.35; margin-bottom: .55rem; }
+            .route-box   { padding: .4rem .6rem; margin-bottom: .55rem; }
+            .route-box .route-head { font-size: .6rem; margin-bottom: .2rem; }
+
+            /* Signatures */
+            .sig-section { margin-top: .5rem; page-break-inside: avoid; }
+            .sig-section p { font-size: .62rem !important; margin-bottom: .4rem !important; }
+            .sig-grid { gap: .9rem; margin-top: .4rem; }
+            .sig-line { height: 30px; border-bottom-width: 1px; }
+            .sig-name-prefill { font-size: .68rem; bottom: 3px; }
+            .sig-label { font-size: .55rem; }
+            .sig-date-line { margin-top: .35rem; }
+            .sig-date-label { font-size: .5rem; margin-top: .1rem; }
+
+            /* Footer */
+            .doc-footer { padding: .35rem 1.1rem; }
+            .doc-footer span { font-size: .55rem; }
+
             a { color: inherit; text-decoration: none; }
+            .doc, .doc-body, .sig-section { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -98,8 +142,8 @@
 
     {{-- Toolbar (screen only) --}}
     <div class="print-toolbar">
-        <a href="{{ route('tickets.index') }}" class="btn-back">
-            ← Back to All Tickets
+        <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('queue') }}" class="btn-back">
+            ← Back
         </a>
         <button class="btn-print" onclick="window.print()">
             🖨 Print / Save as PDF
@@ -164,7 +208,7 @@
             <div class="info-grid">
                 <div class="info-row">
                     <div class="lbl">Requester</div>
-                    <div class="val">{{ $ticket->user->name ?? '—' }}</div>
+                    <div class="val">{{ $ticket->requester ?? $ticket->user->name ?? '—' }}</div>
                 </div>
                 <div class="info-row">
                     <div class="lbl">Date Submitted</div>
@@ -249,7 +293,7 @@
 
                     <div class="sig-box">
                         <div class="sig-line">
-                            <div class="sig-name-prefill">{{ $ticket->user->name ?? '' }}</div>
+                            <div class="sig-name-prefill">{{ $ticket->requester ?? $ticket->user->name ?? '' }}</div>
                         </div>
                         <div class="sig-label">Requester</div>
                         <div class="sig-date-line"></div>

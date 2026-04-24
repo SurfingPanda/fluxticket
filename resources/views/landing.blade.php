@@ -158,7 +158,7 @@
 {{-- ── Navbar ── --}}
 <nav class="navbar">
     <a href="{{ route('landing') }}" class="nav-logo">
-        <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets">
+        <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets">
         <span class="nav-logo-text">FluxTickets</span>
     </a>
     <div class="nav-actions">
@@ -185,7 +185,7 @@
     </div>
     <div class="hero-inner">
         <div class="fade-up">
-            <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets" class="hero-logo">
+            <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets" class="hero-logo">
         </div>
         <div class="hero-badge fade-up fade-up-1">
             <i class="bi bi-lightning-charge-fill"></i> Smart Service Management Platform
@@ -469,7 +469,7 @@
 <footer class="footer">
     <div class="footer-inner">
         <div class="footer-logo">
-            <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets">
+            <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets">
             <span>FluxTickets</span>
         </div>
         <div class="footer-copy">&copy; {{ date('Y') }} FluxTickets. All rights reserved.</div>

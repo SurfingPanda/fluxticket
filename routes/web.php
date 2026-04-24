@@ -173,8 +173,11 @@ Route::middleware('auth')->group(function () {
     // ── Calendar ──
     Route::get('/calendar', function () {
         $tickets = \App\Models\Ticket::select('id','ticket_number','subject','status','priority','type','category','requester','department','description','sla_due_at','created_at','assignee')
-            ->whereNotNull('sla_due_at')
-            ->orWhereIn('status', ['open','progress'])
+            ->whereNotIn('status', ['resolved','closed','rejected'])
+            ->where(function ($q) {
+                $q->whereNotNull('sla_due_at')
+                  ->orWhereIn('status', ['open','progress']);
+            })
             ->get();
         return view('calendar', compact('tickets') + ['activePage' => 'calendar']);
     })->name('calendar');

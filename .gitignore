@@ -43,6 +43,9 @@ Thumbs.db
 .DS_Store
 desktop.ini
 
+# MD
+*.md
+
 # Uploads & user-generated content
 /public/uploads
 /public/image

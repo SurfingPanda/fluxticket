@@ -129,9 +129,9 @@
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div style="width:24px;height:24px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white;flex-shrink:0">
-                                {{ strtoupper(substr($t->user->name ?? '?', 0, 1)) }}
+                                {{ strtoupper(substr($t->requester ?? $t->user->name ?? '?', 0, 1)) }}
                             </div>
-                            <span>{{ $t->user->name ?? '—' }}</span>
+                            <span>{{ $t->requester ?? $t->user->name ?? '—' }}</span>
                         </div>
                     </td>
                     <td>

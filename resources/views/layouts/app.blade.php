@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'FluxTickets') — FluxTickets</title>
-    <link rel="icon" type="image/png" href="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('Image/logo.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
@@ -272,7 +272,7 @@
 <aside class="sidebar" id="appSidebar">
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <img src="{{ asset('logo/Gemini_Generated_Image_1w1sif1w1sif1w1s-removebg-preview.png') }}" alt="FluxTickets Logo">
+            <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets Logo">
         </div>
         <span class="brand-name">FluxTickets</span>
         <button class="sidebar-toggle" id="sidebarToggle" title="Collapse sidebar" type="button">
