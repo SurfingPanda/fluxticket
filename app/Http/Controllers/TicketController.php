@@ -104,6 +104,8 @@ class TicketController extends Controller
 
     public function update(Request $request, \App\Models\Ticket $ticket)
     {
+        $this->authorize('update', $ticket);
+
         $data = $request->validate([
             'status'           => ['required', 'in:open,progress,resolved,closed'],
             'priority'         => ['required', 'in:low,medium,high'],
@@ -177,6 +179,8 @@ class TicketController extends Controller
 
     public function assignToMe(\App\Models\Ticket $ticket)
     {
+        $this->authorize('assign', $ticket);
+
         $ticket->assignee    = auth()->user()->name;
         $ticket->assignee_id = auth()->id();
         if ($ticket->status === 'open') {
@@ -193,6 +197,8 @@ class TicketController extends Controller
 
     public function route(Request $request, \App\Models\Ticket $ticket)
     {
+        $this->authorize('route', $ticket);
+
         $data = $request->validate([
             'routed_to'    => ['required', 'string', 'max:255'],
             'department'   => ['required', 'string', 'max:255'],
@@ -241,10 +247,7 @@ class TicketController extends Controller
 
     public function reject(Request $request, \App\Models\Ticket $ticket)
     {
-        $user = auth()->user();
-        if ($ticket->assignee !== $user->name && $ticket->requester_id !== $user->id) {
-            abort(403, 'Only the requester or assigned technician may reject this ticket.');
-        }
+        $this->authorize('reject', $ticket);
 
         $data = $request->validate([
             'rejection_reason' => ['required', 'string', 'max:1000'],
@@ -274,6 +277,8 @@ class TicketController extends Controller
 
     public function addNote(Request $request, \App\Models\Ticket $ticket)
     {
+        $this->authorize('addNote', $ticket);
+
         $data = $request->validate([
             'content'    => ['required', 'string', 'max:2000'],
             'attachment' => ['nullable', 'file', 'max:5120'],
@@ -307,11 +312,15 @@ class TicketController extends Controller
 
     public function printView(\App\Models\Ticket $ticket)
     {
+        $this->authorize('view', $ticket);
+
         return view('tickets.print', compact('ticket'));
     }
 
     public function attachKba(\App\Models\Ticket $ticket, \App\Models\KnowledgeArticle $article)
     {
+        $this->authorize('view', $ticket);
+
         $alreadyLinked = $ticket->knowledgeArticles()->where('knowledge_article_id', $article->id)->exists();
         $ticket->knowledgeArticles()->syncWithoutDetaching([$article->id]);
         if (!$alreadyLinked) {
@@ -330,6 +339,8 @@ class TicketController extends Controller
 
     public function detachKba(\App\Models\Ticket $ticket, \App\Models\KnowledgeArticle $article)
     {
+        $this->authorize('view', $ticket);
+
         $ticket->knowledgeArticles()->detach($article->id);
         return response()->json(['ok' => true]);
     }

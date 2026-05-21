@@ -73,7 +73,7 @@
             </div>
         </div>
         <div class="stat-value">{{ $stats['resolved'] }}</div>
-        <div class="stat-trend" style="color:var(--muted)">Successfully closed</div>
+        <div class="stat-trend" style="color:var(--muted)">Marked as resolved</div>
     </div>
 
     <div class="stat-card panel">
@@ -83,7 +83,7 @@
                 <i class="bi bi-stack" style="color:#f87171"></i>
             </div>
         </div>
-        <div class="stat-value">{{ array_sum($stats) }}</div>
+        <div class="stat-value">{{ $stats['total'] }}</div>
         <div class="stat-trend" style="color:var(--muted)">All time tickets</div>
     </div>
 
@@ -91,7 +91,7 @@
 
 {{-- ── Recent Tickets Table ── --}}
 @php
-    $statusMap   = ['open'=>['s-open','Open'],'progress'=>['s-progress','In Progress'],'resolved'=>['s-resolved','Resolved'],'closed'=>['s-closed','Closed']];
+    $statusMap   = ['open'=>['s-open','Open'],'progress'=>['s-progress','In Progress'],'resolved'=>['s-resolved','Resolved'],'closed'=>['s-closed','Closed'],'rejected'=>['s-rejected','Rejected']];
     $priorityMap = ['high'=>'p-high','medium'=>'p-medium','low'=>'p-low'];
 @endphp
 <div class="panel mb-0">
@@ -129,9 +129,9 @@
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div style="width:24px;height:24px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white;flex-shrink:0">
-                                {{ strtoupper(substr($t->requester ?? $t->user->name ?? '?', 0, 1)) }}
+                                {{ strtoupper(substr($t->requester ?? $t->user?->name ?? '?', 0, 1)) }}
                             </div>
-                            <span>{{ $t->requester ?? $t->user->name ?? '—' }}</span>
+                            <span>{{ $t->requester ?? $t->user?->name ?? '—' }}</span>
                         </div>
                     </td>
                     <td>
@@ -198,7 +198,7 @@
 
                 <div style="border-top:1px solid var(--border);padding-top:.75rem;margin-top:.25rem">
                     <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:.5rem">SLA Targets by Priority</div>
-                    @foreach(['high'=>'1-2 days','medium'=>'2-3 days','low'=>'1-7 days'] as $p => $target)
+                    @foreach(Ticket::SLA_DAYS as $p => $days)
                     @php
                         $pc = $allT->filter(fn($t)=>$t->priority===$p);
                         $pcMet = $pc->filter(fn($t)=>in_array($t->sla_status,['met','ok']))->count();
@@ -206,7 +206,7 @@
                     @endphp
                     <div class="d-flex align-items-center gap-2 mb-1" style="font-size:.75rem">
                         <span class="badge-priority p-{{ $p }}" style="min-width:52px;text-align:center">{{ ucfirst($p) }}</span>
-                        <span style="color:var(--muted)">{{ $target }}</span>
+                        <span style="color:var(--muted)">{{ $days }} {{ \Illuminate\Support\Str::plural('day', $days) }}</span>
                         <span style="margin-left:auto;color:var(--text);font-weight:600">{{ $pcMet }}/{{ $pcTotal }}</span>
                     </div>
                     @endforeach
@@ -230,7 +230,7 @@
                 $color   = $isRoute ? 'rgba(251,191,36,.12)' : ($isRejection ? 'rgba(248,113,113,.12)' : ($isSystem ? 'rgba(251,191,36,.12)' : 'rgba(99,102,241,.15)'));
                 $ic      = $isRoute ? '#fbbf24' : ($isRejection ? '#f87171' : ($isSystem ? '#fbbf24' : '#818cf8'));
                 $num     = $a->ticket->ticket_number ?? '—';
-                $who     = ($isRejection || $isSystem) ? 'System' : ($a->user->name ?? 'Someone');
+                $who     = ($isRejection || $isSystem) ? 'System' : ($a->user?->name ?? 'Someone');
                 $action  = $isRoute ? "routed ticket <b>{$num}</b>" : ($isRejection ? "rejected ticket <b>{$num}</b>" : ($isSystem ? "logged a system event on <b>{$num}</b>" : "added a note on <b>{$num}</b>"));
             @endphp
             <div class="activity-item">

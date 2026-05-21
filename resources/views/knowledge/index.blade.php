@@ -135,7 +135,7 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
         'content'      => $a->content,
         'tags'         => $a->tags ?? '',
         'status'       => $a->status,
-        'author'       => $a->user->name ?? 'Unknown',
+        'author'       => $a->user?->name ?? 'Unknown',
         'created'      => $a->created_at->format('M d, Y'),
         'updated'      => $a->updated_at->format('M d, Y'),
         'isAuthor'     => auth()->id() === $a->user_id,
@@ -225,7 +225,7 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
                 'content'      => $article->content,
                 'tags'         => $article->tags ?? '',
                 'status'       => $article->status,
-                'author'       => $article->user->name ?? 'Unknown',
+                'author'       => $article->user?->name ?? 'Unknown',
                 'created'      => $article->created_at->format('M d, Y'),
                 'updated'      => $article->updated_at->format('M d, Y'),
                 'isAuthor'     => $isAuthor,
@@ -272,9 +272,9 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
             <td>
                 <div style="display:flex;align-items:center;gap:.5rem">
                     <div style="width:26px;height:26px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;flex-shrink:0">
-                        {{ strtoupper(substr($article->user->name ?? 'U', 0, 1)) }}
+                        {{ strtoupper(substr($article->user?->name ?? 'U', 0, 1)) }}
                     </div>
-                    <span style="font-size:.78rem;color:var(--muted)">{{ $article->user->name ?? 'Unknown' }}</span>
+                    <span style="font-size:.78rem;color:var(--muted)">{{ $article->user?->name ?? 'Unknown' }}</span>
                 </div>
             </td>
             <td><span class="{{ $article->status === 'published' ? 'kb-status-published' : 'kb-status-draft' }}">{{ ucfirst($article->status) }}</span></td>

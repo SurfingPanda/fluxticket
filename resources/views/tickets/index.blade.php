@@ -105,9 +105,9 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
                     <td>
                         <div class="d-flex align-items-center gap-2">
                             <div style="width:25px;height:25px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white;flex-shrink:0">
-                                {{ strtoupper(substr($t->requester ?? $t->user->name ?? '?', 0, 1)) }}
+                                {{ strtoupper(substr($t->requester ?? $t->user?->name ?? '?', 0, 1)) }}
                             </div>
-                            <span style="white-space:nowrap">{{ $t->requester ?? $t->user->name ?? '—' }}</span>
+                            <span style="white-space:nowrap">{{ $t->requester ?? $t->user?->name ?? '—' }}</span>
                         </div>
                     </td>
                     <td><span class="badge-priority {{ $priorityMap[$t->priority] ?? 'p-low' }}">{{ ucfirst($t->priority) }}</span></td>

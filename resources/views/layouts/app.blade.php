@@ -151,6 +151,7 @@
         .s-progress { background:rgba(251,191,36,.12); color:#fbbf24; } .s-progress::before { background:#fbbf24; }
         .s-resolved { background:rgba(52,211,153,.12); color:#34d399; } .s-resolved::before { background:#34d399; }
         .s-closed { background:rgba(148,163,184,.12); color:#94a3b8; } .s-closed::before { background:#94a3b8; }
+        .s-rejected { background:rgba(248,113,113,.12); color:#f87171; } .s-rejected::before { background:#f87171; }
         .badge-priority { display:inline-block; padding:.18rem .55rem; border-radius:.35rem; font-size:.68rem; font-weight:700; }
         .p-high { background:rgba(248,113,113,.15); color:#f87171; }
         .p-medium { background:rgba(251,191,36,.12); color:#fbbf24; }

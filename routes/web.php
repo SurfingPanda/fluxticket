@@ -144,6 +144,7 @@ Route::middleware('auth')->group(function () {
             'open'     => \App\Models\Ticket::where('status', 'open')->count(),
             'progress' => \App\Models\Ticket::where('status', 'progress')->count(),
             'resolved' => \App\Models\Ticket::where('status', 'resolved')->count(),
+            'total'    => \App\Models\Ticket::count(),
         ];
 
         $deptUsers = \App\Models\User::whereNotNull('department')
@@ -220,12 +221,7 @@ Route::middleware('auth')->group(function () {
         if (request('open')) {
             $openTicket = \App\Models\Ticket::with(['user', 'notes.user', 'knowledgeArticles'])
                 ->find((int) request('open'));
-            if ($openTicket && ! $user->isSuperAdmin()
-                && $openTicket->user_id !== $user->id
-                && $openTicket->requester_id !== $user->id
-                && $openTicket->requester !== $user->name
-                && $openTicket->assignee !== $user->name
-                && $openTicket->department !== $user->department) {
+            if ($openTicket && $user->cannot('view', $openTicket)) {
                 $openTicket = null;
             }
         }
@@ -258,7 +254,7 @@ Route::middleware('auth')->group(function () {
             'subject'       => $t->subject,
             'status'        => $t->status,
             'priority'      => $t->priority,
-            'requester'     => $t->requester ?? $t->user->name ?? 'Unknown',
+            'requester'     => $t->requester ?? $t->user?->name ?? 'Unknown',
         ]));
     })->name('tickets.search');
 
@@ -290,33 +286,60 @@ Route::middleware('auth')->group(function () {
         ->name('tickets.kba.detach');
 
     // ── My Queue ──
-    Route::get('/queue', function () {
+    Route::get('/queue', function (\Illuminate\Http\Request $request) {
         $user    = auth()->user();
+        $typeMap = ['incident'=>'Incident','service_request'=>'Service Request','question'=>'Question','change_request'=>'Change Request'];
+
         $tickets = \App\Models\Ticket::with(['user','notes.user','knowledgeArticles'])
             ->where(function ($q) use ($user) {
                 $q->where('assignee_id', $user->id)
                   ->orWhere('user_id', $user->id);
             })
-            ->latest()->get();
+            ->when($request->filled('status') && $request->input('status') !== 'all',
+                fn($q) => $q->where('status', $request->input('status')))
+            ->when($request->filled('priority') && $request->input('priority') !== 'all',
+                fn($q) => $q->where('priority', $request->input('priority')))
+            ->when($request->filled('type') && $request->input('type') !== 'all',
+                fn($q) => $q->where('type', $typeMap[$request->input('type')] ?? $request->input('type')))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $term = trim($request->input('q'));
+                $q->where(function ($s) use ($term) {
+                    $s->where('ticket_number', 'like', "%{$term}%")
+                      ->orWhere('subject', 'like', "%{$term}%")
+                      ->orWhere('requester', 'like', "%{$term}%")
+                      ->orWhere('category', 'like', "%{$term}%");
+                });
+            })
+            ->latest()->paginate(20)->withQueryString();
+
+        if ($request->ajax()) {
+            return view('partials.queue-results', compact('tickets'));
+        }
+
         $deptUsers = \App\Models\User::whereNotNull('department')
             ->orderBy('name')->get(['id','name','department'])->groupBy('department');
         $allKbas = \App\Models\KnowledgeArticle::orderBy('title')
             ->get(['id', 'kba_number', 'title', 'category']);
-        $allowedDepts = auth()->user()->isSuperAdmin()
+        $allowedDepts = $user->isSuperAdmin()
             ? \App\Models\SystemSetting::allDepartments()
-            : auth()->user()->effectiveRoutingDepts();
+            : $user->effectiveRoutingDepts();
         $openTicket = null;
-        if (request('open')) {
+        if ($request->filled('open')) {
             $openTicket = \App\Models\Ticket::with(['user','notes.user','knowledgeArticles'])
-                ->find((int) request('open'));
+                ->find((int) $request->input('open'));
+            if ($openTicket && $user->cannot('view', $openTicket)) {
+                $openTicket = null;
+            }
         }
         return view('queue', compact('tickets','deptUsers','allKbas','allowedDepts','openTicket') + ['activePage'=>'queue']);
     })->name('queue');
 
     // ── Department Tickets ──
-    Route::get('/department-tickets', function () {
-        $user = auth()->user();
-        $dept = $user->department;
+    Route::get('/department-tickets', function (\Illuminate\Http\Request $request) {
+        $user    = auth()->user();
+        $dept    = $user->department;
+        $typeMap = ['incident'=>'Incident','service_request'=>'Service Request','question'=>'Question','change_request'=>'Change Request'];
+
         $tickets = \App\Models\Ticket::with(['user','notes.user'])
             ->when(
                 $dept,
@@ -324,11 +347,35 @@ Route::middleware('auth')->group(function () {
                                                 ->orWhere('requester_dept', $dept)),
                 fn($q) => $q->whereRaw('1 = 0')
             )
-            ->latest()->get();
+            ->when($request->filled('status') && $request->input('status') !== 'all',
+                fn($q) => $q->where('status', $request->input('status')))
+            ->when($request->filled('priority') && $request->input('priority') !== 'all',
+                fn($q) => $q->where('priority', $request->input('priority')))
+            ->when($request->filled('type') && $request->input('type') !== 'all',
+                fn($q) => $q->where('type', $typeMap[$request->input('type')] ?? $request->input('type')))
+            ->when($request->filled('q'), function ($q) use ($request) {
+                $term = trim($request->input('q'));
+                $q->where(function ($s) use ($term) {
+                    $s->where('ticket_number', 'like', "%{$term}%")
+                      ->orWhere('subject', 'like', "%{$term}%")
+                      ->orWhere('requester', 'like', "%{$term}%")
+                      ->orWhere('category', 'like', "%{$term}%")
+                      ->orWhere('assignee', 'like', "%{$term}%");
+                });
+            })
+            ->latest()->paginate(20)->withQueryString();
+
+        if ($request->ajax()) {
+            return view('partials.department-tickets-results', compact('tickets','dept'));
+        }
+
         $openTicket = null;
-        if (request('open')) {
+        if ($request->filled('open')) {
             $openTicket = \App\Models\Ticket::with(['user','notes.user'])
-                ->find((int) request('open'));
+                ->find((int) $request->input('open'));
+            if ($openTicket && $user->cannot('view', $openTicket)) {
+                $openTicket = null;
+            }
         }
         return view('department-tickets', compact('tickets','openTicket','dept') + ['activePage'=>'department_tickets']);
     })->name('department.tickets');

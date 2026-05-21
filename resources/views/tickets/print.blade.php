@@ -208,7 +208,7 @@
             <div class="info-grid">
                 <div class="info-row">
                     <div class="lbl">Requester</div>
-                    <div class="val">{{ $ticket->requester ?? $ticket->user->name ?? '—' }}</div>
+                    <div class="val">{{ $ticket->requester ?? $ticket->user?->name ?? '—' }}</div>
                 </div>
                 <div class="info-row">
                     <div class="lbl">Date Submitted</div>
@@ -293,7 +293,7 @@
 
                     <div class="sig-box">
                         <div class="sig-line">
-                            <div class="sig-name-prefill">{{ $ticket->requester ?? $ticket->user->name ?? '' }}</div>
+                            <div class="sig-name-prefill">{{ $ticket->requester ?? $ticket->user?->name ?? '' }}</div>
                         </div>
                         <div class="sig-label">Requester</div>
                         <div class="sig-date-line"></div>

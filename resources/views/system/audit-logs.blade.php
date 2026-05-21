@@ -163,7 +163,7 @@
             <tbody>
                 @foreach($logs as $log)
                 @php [$chipClass, $actionIcon] = auditChip($log->action); @endphp
-                <tr data-search="{{ strtolower($log->action . ' ' . ($log->user->name ?? '') . ' ' . $log->description . ' ' . $log->subject_label) }}">
+                <tr data-search="{{ strtolower($log->action . ' ' . ($log->user?->name ?? '') . ' ' . $log->description . ' ' . $log->subject_label) }}">
                     <td style="white-space:nowrap;color:var(--muted);font-size:.75rem">
                         <div>{{ $log->created_at->format('M d, Y') }}</div>
                         <div>{{ $log->created_at->format('h:i A') }}</div>
@@ -183,7 +183,7 @@
     <div id="mobileCards">
         @foreach($logs as $log)
         @php [$chipClass, $actionIcon] = auditChip($log->action); @endphp
-        <div class="log-card" data-search="{{ strtolower($log->action . ' ' . ($log->user->name ?? '') . ' ' . $log->description . ' ' . $log->subject_label) }}">
+        <div class="log-card" data-search="{{ strtolower($log->action . ' ' . ($log->user?->name ?? '') . ' ' . $log->description . ' ' . $log->subject_label) }}">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap">
                 <span class="action-chip {{ $chipClass }}" style="font-size:.65rem">
                     @if($actionIcon)<i class="bi {{ $actionIcon }}" style="margin-right:.3rem"></i>@endif

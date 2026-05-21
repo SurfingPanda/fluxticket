@@ -50,98 +50,48 @@
 
 @section('content')
 @php
-    $statusMap   = ['open'=>['s-open','Open'],'progress'=>['s-progress','In Progress'],'resolved'=>['s-resolved','Resolved'],'closed'=>['s-closed','Closed'],'rejected'=>['s-rejected','Rejected']];
-    $priorityMap = ['high'=>'p-high','medium'=>'p-medium','low'=>'p-low'];
+    $fStatus   = request('status', 'all');
+    $fPriority = request('priority', 'all');
+    $fType     = request('type', 'all');
 @endphp
 
 <div class="panel">
     <div class="panel-header">
         <span class="panel-title"><i class="bi bi-clock-history me-2" style="color:var(--accent)"></i>My Assigned Tickets</span>
         <div id="statusFilters" class="d-flex gap-2 flex-wrap">
-            <button class="filter-btn active" data-status="all"      onclick="filterStatus('all',this)">All</button>
-            <button class="filter-btn"        data-status="open"     onclick="filterStatus('open',this)">Open</button>
-            <button class="filter-btn"        data-status="progress" onclick="filterStatus('progress',this)">In Progress</button>
-            <button class="filter-btn"        data-status="resolved" onclick="filterStatus('resolved',this)">Resolved</button>
-            <button class="filter-btn"        data-status="closed"   onclick="filterStatus('closed',this)">Closed</button>
+            <button class="filter-btn {{ $fStatus==='all'?'active':'' }}"      data-status="all"      onclick="filterStatus('all',this)">All</button>
+            <button class="filter-btn {{ $fStatus==='open'?'active':'' }}"     data-status="open"     onclick="filterStatus('open',this)">Open</button>
+            <button class="filter-btn {{ $fStatus==='progress'?'active':'' }}" data-status="progress" onclick="filterStatus('progress',this)">In Progress</button>
+            <button class="filter-btn {{ $fStatus==='resolved'?'active':'' }}" data-status="resolved" onclick="filterStatus('resolved',this)">Resolved</button>
+            <button class="filter-btn {{ $fStatus==='closed'?'active':'' }}"   data-status="closed"   onclick="filterStatus('closed',this)">Closed</button>
         </div>
     </div>
     <div style="padding:.55rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1.75rem;flex-wrap:wrap;background:var(--surface2)">
         <div style="display:flex;align-items:center;gap:.6rem">
             <span style="font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Priority</span>
             <div id="priorityFilters" class="d-flex gap-1">
-                <button class="filter-btn active" data-priority="all"    onclick="filterPriority('all',this)">All</button>
-                <button class="filter-btn"        data-priority="high"   onclick="filterPriority('high',this)" style="color:#f87171">High</button>
-                <button class="filter-btn"        data-priority="medium" onclick="filterPriority('medium',this)" style="color:#fbbf24">Medium</button>
-                <button class="filter-btn"        data-priority="low"    onclick="filterPriority('low',this)" style="color:#34d399">Low</button>
+                <button class="filter-btn {{ $fPriority==='all'?'active':'' }}"    data-priority="all"    onclick="filterPriority('all',this)">All</button>
+                <button class="filter-btn {{ $fPriority==='high'?'active':'' }}"   data-priority="high"   onclick="filterPriority('high',this)" style="color:#f87171">High</button>
+                <button class="filter-btn {{ $fPriority==='medium'?'active':'' }}" data-priority="medium" onclick="filterPriority('medium',this)" style="color:#fbbf24">Medium</button>
+                <button class="filter-btn {{ $fPriority==='low'?'active':'' }}"    data-priority="low"    onclick="filterPriority('low',this)" style="color:#34d399">Low</button>
             </div>
         </div>
         <div style="width:1px;height:20px;background:var(--border);flex-shrink:0"></div>
         <div style="display:flex;align-items:center;gap:.6rem">
             <span style="font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap">Type</span>
             <div id="typeFilters" class="d-flex gap-1 flex-wrap">
-                <button class="filter-btn active" data-type="all"             onclick="filterType('all',this)">All</button>
-                <button class="filter-btn"        data-type="incident"        onclick="filterType('incident',this)">Incident</button>
-                <button class="filter-btn"        data-type="service_request" onclick="filterType('service_request',this)">Service Request</button>
-                <button class="filter-btn"        data-type="question"        onclick="filterType('question',this)">Question</button>
-                <button class="filter-btn"        data-type="change_request"  onclick="filterType('change_request',this)">Change Request</button>
+                <button class="filter-btn {{ $fType==='all'?'active':'' }}"             data-type="all"             onclick="filterType('all',this)">All</button>
+                <button class="filter-btn {{ $fType==='incident'?'active':'' }}"        data-type="incident"        onclick="filterType('incident',this)">Incident</button>
+                <button class="filter-btn {{ $fType==='service_request'?'active':'' }}" data-type="service_request" onclick="filterType('service_request',this)">Service Request</button>
+                <button class="filter-btn {{ $fType==='question'?'active':'' }}"        data-type="question"        onclick="filterType('question',this)">Question</button>
+                <button class="filter-btn {{ $fType==='change_request'?'active':'' }}"  data-type="change_request"  onclick="filterType('change_request',this)">Change Request</button>
             </div>
         </div>
     </div>
 
-    @if($tickets->isEmpty())
-    <div style="padding:4rem;text-align:center;color:var(--muted)">
-        <i class="bi bi-inbox" style="font-size:2.5rem;opacity:.25;display:block;margin-bottom:1rem"></i>
-        <div style="font-size:.95rem;font-weight:600">Your queue is empty</div>
-        <div style="font-size:.82rem;margin-top:.35rem">No tickets are assigned to you right now.</div>
+    <div id="resultsContainer">
+        @include('partials.queue-results', ['tickets' => $tickets])
     </div>
-    @else
-    <div id="tableWrap" style="overflow-x:auto">
-        <table class="flux-table" id="ticketTable">
-            <thead>
-                <tr>
-                    <th>Ticket ID</th>
-                    <th>Subject</th>
-                    <th>Requester</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Type</th>
-                    <th>Created</th>
-                    <th>Last Updated</th>
-                    <th style="text-align:center">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($tickets as $t)
-                <tr data-status="{{ $t->status }}" data-priority="{{ $t->priority }}" data-type="{{ $t->type ?? '' }}" data-search="{{ strtolower($t->ticket_number . ' ' . $t->subject . ' ' . ($t->requester ?? $t->user->name ?? '') . ' ' . $t->category . ' ' . ($t->type ?? '')) }}">
-                    <td><span style="font-size:.72rem;font-weight:700;color:#818cf8;font-family:monospace">{{ $t->ticket_number }}</span></td>
-                    <td style="max-width:200px">
-                        <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $t->subject }}</div>
-                        <div style="font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ $t->description }}</div>
-                    </td>
-                    <td>
-                        <div style="display:flex;align-items:center;gap:.5rem">
-                            <div style="width:25px;height:25px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:white;flex-shrink:0">{{ strtoupper(substr($t->requester ?? $t->user->name ?? '?', 0, 1)) }}</div>
-                            <span style="white-space:nowrap">{{ $t->requester ?? $t->user->name ?? '—' }}</span>
-                        </div>
-                    </td>
-                    <td><span class="badge-priority {{ $priorityMap[$t->priority] ?? 'p-low' }}">{{ ucfirst($t->priority) }}</span></td>
-                    <td><span class="badge-status {{ $statusMap[$t->status][0] ?? 's-open' }}">{{ $statusMap[$t->status][1] ?? 'Open' }}</span></td>
-                    <td style="color:var(--muted);font-size:.82rem;white-space:nowrap">{{ $t->type ?: '—' }}</td>
-                    <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">{{ $t->created_at->diffForHumans() }}</td>
-                    <td style="color:var(--muted);font-size:.78rem;white-space:nowrap">{{ $t->updated_at->diffForHumans() }}</td>
-                    <td style="text-align:center">
-                        <div style="display:flex;align-items:center;justify-content:center;gap:.4rem">
-                            <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->requester ?? $t->user->name ?? "Unknown"))'>
-                                <i class="bi bi-eye me-1"></i>View
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    @endif
 </div>
 @endsection
 
@@ -550,76 +500,72 @@
 
     document.addEventListener('keydown', e => { if(e.key==='Escape') ['viewModal','routeModal','rejectModal'].forEach(closeModal); });
 
-    // ── Filter (saveable) ──
-    const _FKEY = 'flux_filter_queue';
-    let _currentStatus   = 'all';
-    let _currentPriority = 'all';
-    let _currentType     = 'all';
+    // ── Server-side filtering + pagination (AJAX) ──
+    const _resultsContainer = document.getElementById('resultsContainer');
+    const _filterState = {
+        status:   @json(request('status', 'all')),
+        priority: @json(request('priority', 'all')),
+        type:     @json(request('type', 'all')),
+    };
+    let _searchTimer = null;
 
-    function _saveFilter() {
-        try { localStorage.setItem(_FKEY, JSON.stringify({ status: _currentStatus, priority: _currentPriority, type: _currentType })); } catch(e){}
+    function _resultsUrl(page) {
+        const p = new URLSearchParams();
+        if (_filterState.status   !== 'all') p.set('status', _filterState.status);
+        if (_filterState.priority !== 'all') p.set('priority', _filterState.priority);
+        if (_filterState.type     !== 'all') p.set('type', _filterState.type);
+        const term = (document.getElementById('searchInput')?.value || '').trim();
+        if (term)             p.set('q', term);
+        if (page && page > 1) p.set('page', page);
+        const qs = p.toString();
+        return location.pathname + (qs ? '?' + qs : '');
     }
-    function filterStatus(s, btn) {
-        _currentStatus = s;
-        document.querySelectorAll('#statusFilters .filter-btn').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        _saveFilter(); applyFilters();
-    }
-    function filterPriority(p, btn) {
-        _currentPriority = p;
-        document.querySelectorAll('#priorityFilters .filter-btn').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        _saveFilter(); applyFilters();
-    }
-    function filterType(t, btn) {
-        _currentType = t;
-        document.querySelectorAll('#typeFilters .filter-btn').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        _saveFilter(); applyFilters();
-    }
-    function applyFilters() {
-        const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
-        document.querySelectorAll('#ticketTable tbody tr').forEach(row => {
-            const matchStatus   = _currentStatus==='all'   || row.dataset.status===_currentStatus;
-            const matchPriority = _currentPriority==='all' || row.dataset.priority===_currentPriority;
-            const matchType     = _currentType==='all'     || row.dataset.type===_currentType;
-            const matchSearch   = !q || (row.dataset.search||'').includes(q);
-            row.style.display = (matchStatus && matchPriority && matchType && matchSearch) ? '' : 'none';
-        });
-        updateTableScroll();
-    }
-    function updateTableScroll() {
-        const wrap = document.getElementById('tableWrap');
-        if (!wrap) return;
-        const visible = [...wrap.querySelectorAll('#ticketTable tbody tr')].filter(r => r.style.display !== 'none').length;
-        if (visible > 9) {
-            wrap.style.maxHeight = '540px';
-            wrap.style.overflowY = 'auto';
-        } else {
-            wrap.style.maxHeight = '';
-            wrap.style.overflowY = 'hidden';
+
+    async function loadResults(page) {
+        if (!_resultsContainer) return;
+        const url = _resultsUrl(page);
+        _resultsContainer.style.opacity = '.45';
+        try {
+            const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            _resultsContainer.innerHTML = await res.text();
+            history.replaceState(null, '', url);
+        } catch (e) {
+            /* keep the current view on failure */
+        } finally {
+            _resultsContainer.style.opacity = '';
         }
     }
-    updateTableScroll();
-    // Restore saved filter
-    (function() {
-        try {
-            const saved = JSON.parse(localStorage.getItem(_FKEY));
-            if (!saved) return;
-            if (saved.status && saved.status !== 'all') {
-                const b = document.querySelector('#statusFilters [data-status="'+saved.status+'"]');
-                if (b) filterStatus(saved.status, b);
-            }
-            if (saved.priority && saved.priority !== 'all') {
-                const b = document.querySelector('#priorityFilters [data-priority="'+saved.priority+'"]');
-                if (b) filterPriority(saved.priority, b);
-            }
-            if (saved.type && saved.type !== 'all') {
-                const b = document.querySelector('#typeFilters [data-type="'+saved.type+'"]');
-                if (b) filterType(saved.type, b);
-            }
-        } catch(e) {}
-    })();
+
+    function filterStatus(s, btn) {
+        _filterState.status = s;
+        document.querySelectorAll('#statusFilters .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadResults(1);
+    }
+    function filterPriority(p, btn) {
+        _filterState.priority = p;
+        document.querySelectorAll('#priorityFilters .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadResults(1);
+    }
+    function filterType(t, btn) {
+        _filterState.type = t;
+        document.querySelectorAll('#typeFilters .filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadResults(1);
+    }
+    // Triggered by the top-bar search box (debounced)
+    function applyFilters() {
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(() => loadResults(1), 300);
+    }
+    // Pagination — buttons are re-rendered on each swap, so delegate.
+    if (_resultsContainer) {
+        _resultsContainer.addEventListener('click', function (e) {
+            const btn = e.target.closest('.pager-btn[data-page]');
+            if (btn) loadResults(parseInt(btn.dataset.page, 10));
+        });
+    }
 
     // SLA
     const slaLabels = { ok:'On Track', warning:'At Risk', breached:'Breached', met:'Met' };
