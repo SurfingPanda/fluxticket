@@ -183,7 +183,7 @@
                     </div>
                     <div class="ap-field">
                         <div class="ap-field-label"><i class="bi bi-envelope-fill" style="margin-right:.3rem"></i>Email <span style="color:#f87171">*</span></div>
-                        <input type="email" name="email" value="{{ old('email') }}" required placeholder="user@fluxtickets.com"
+                        <input type="email" name="email" value="{{ old('email') }}" required placeholder="user@ecticketing.com"
                             style="width:100%;background:transparent;border:none;outline:none;font-size:.85rem;color:var(--text);margin-top:.15rem">
                     </div>
                     <div class="ap-field">

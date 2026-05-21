@@ -101,7 +101,7 @@
 @endpush
 
 @section('content')
-@php $u = auth()->user(); @endphp
+@php $u = auth()->user(); $isSA = $u->isSuperAdmin(); @endphp
 
 @if($errors->any())
 <div class="flash-err"><i class="bi bi-exclamation-circle-fill"></i> Please fix the errors below.</div>
@@ -182,9 +182,17 @@
                         </div>
                         <div>
                             <label class="m-label">Job Title</label>
+                            @if($isSA)
                             <input class="m-input profile-editable" name="job_title" type="text"
                                 value="{{ old('job_title', $u->job_title) }}" placeholder="e.g. IT Support Specialist" disabled>
                             @error('job_title')<div class="field-err">{{ $message }}</div>@enderror
+                            @else
+                            <div class="s-readonly">
+                                <i class="bi bi-briefcase"></i>
+                                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $u->job_title ?: '—' }}</span>
+                                <span class="s-badge">Read only</span>
+                            </div>
+                            @endif
                         </div>
                     </div>
 
@@ -204,11 +212,12 @@
                         </div>
                     </div>
 
-                    {{-- Row 4: Email + Department (editable in edit mode) --}}
+                    {{-- Row 4: Email + Department (editable by super admins only) --}}
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.85rem">
-                        {{-- Email: read-only display vs editable input --}}
+                        {{-- Email: super admins edit; everyone else read-only --}}
                         <div>
                             <label class="m-label">Email Address</label>
+                            @if($isSA)
                             <div class="s-readonly profile-view-field">
                                 <i class="bi bi-envelope"></i>
                                 <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $u->email }}</span>
@@ -218,10 +227,19 @@
                                 value="{{ old('email', $u->email) }}" required placeholder="your@email.com"
                                 disabled style="display:none">
                             @error('email')<div class="field-err">{{ $message }}</div>@enderror
+                            @else
+                            <div class="s-readonly">
+                                <i class="bi bi-envelope"></i>
+                                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ $u->email }}</span>
+                                <span class="s-badge">Read only</span>
+                            </div>
+                            <input type="hidden" name="email" value="{{ $u->email }}">
+                            @endif
                         </div>
-                        {{-- Department: read-only display vs editable input --}}
+                        {{-- Department: super admins edit; everyone else read-only --}}
                         <div>
                             <label class="m-label">Department</label>
+                            @if($isSA)
                             <div class="s-readonly profile-view-field">
                                 <i class="bi bi-building"></i>
                                 {{ $u->department ?: '—' }}
@@ -231,6 +249,13 @@
                                 value="{{ old('department', $u->department) }}" placeholder="e.g. IT"
                                 disabled style="display:none">
                             @error('department')<div class="field-err">{{ $message }}</div>@enderror
+                            @else
+                            <div class="s-readonly">
+                                <i class="bi bi-building"></i>
+                                {{ $u->department ?: '—' }}
+                                <span class="s-badge">Read only</span>
+                            </div>
+                            @endif
                         </div>
                     </div>
 

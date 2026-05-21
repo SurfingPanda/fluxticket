@@ -11,11 +11,11 @@ class SuperAdminSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'superadmin@fluxtickets.com'],
+            ['email' => 'superadmin@ecticketing.com'],
             [
                 'name'            => 'Super Admin',
                 'username'        => 'superadmin',
-                'email'           => 'superadmin@fluxtickets.com',
+                'email'           => 'superadmin@ecticketing.com',
                 'password'        => Hash::make('Admin@1234'),
                 'role'            => 'super_admin',
                 'department'      => 'IT',

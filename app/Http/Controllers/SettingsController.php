@@ -42,7 +42,26 @@ class SettingsController extends Controller
             unset($data['profile_photo']);
         }
 
+        // Job title, email, and department may only be changed by super admins.
+        // Force these back to the user's current values for everyone else, so a
+        // crafted request cannot bypass the read-only fields in the UI.
+        if (! $user->isSuperAdmin()) {
+            unset($data['job_title'], $data['department']);
+            $data['email'] = $user->email;
+        }
+
+        $oldName = $user->name;
         $user->update($data);
+
+        // Keep denormalised ticket name caches in sync when the user is renamed,
+        // so existing tickets don't display a stale name. (Queries already use ids.)
+        if ($user->name !== $oldName) {
+            \App\Models\Ticket::where('requester_id',   $user->id)->update(['requester'   => $user->name]);
+            \App\Models\Ticket::where('assignee_id',    $user->id)->update(['assignee'    => $user->name]);
+            \App\Models\Ticket::where('resolved_by_id', $user->id)->update(['resolved_by' => $user->name]);
+            \App\Models\Ticket::where('rejected_by_id', $user->id)->update(['rejected_by' => $user->name]);
+            \App\Models\Ticket::where('routed_to_id',   $user->id)->update(['routed_to'   => $user->name]);
+        }
 
         return back()->with('success', 'Profile updated successfully.');
     }

@@ -134,11 +134,6 @@
                             <button class="btn-view" onclick='openView(@json($t->toArray()), @json($t->requester ?? $t->user->name ?? "Unknown"))'>
                                 <i class="bi bi-eye me-1"></i>View
                             </button>
-                            @if(!in_array($t->status, ['resolved','closed','rejected']) && ($t->assignee === auth()->user()->name || $t->requester_id === auth()->id()))
-                            <button class="btn-reject" onclick="openRejectModal({{ $t->id }}, '{{ addslashes($t->ticket_number) }}')">
-                                <i class="bi bi-x-circle me-1"></i>Reject
-                            </button>
-                            @endif
                         </div>
                     </td>
                 </tr>
@@ -239,7 +234,7 @@
             <a id="vm-print-btn" href="#" target="_blank" class="btn-ghost"><i class="bi bi-printer"></i> Print / PDF</a>
             <button id="vm-reject-btn" onclick="openRejectFromView()" style="display:none;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);border-radius:.6rem;color:#f87171;font-size:.875rem;font-weight:600;padding:.5rem 1rem;align-items:center;gap:.4rem;cursor:pointer"><i class="bi bi-x-circle"></i> Reject</button>
             <button id="vm-route-btn" onclick="openRouteFromView()" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:.6rem;color:#fbbf24;font-size:.875rem;font-weight:600;padding:.5rem 1rem;display:flex;align-items:center;gap:.4rem;cursor:pointer"><i class="bi bi-arrow-left-right"></i> Route</button>
-            <button id="vm-save-btn" class="btn-submit" style="display:none" onclick="document.getElementById('editTicketForm').submit()"><i class="bi bi-floppy"></i> Save Changes</button>
+            <button id="vm-save-btn" class="btn-submit" style="display:none" onclick="saveTicketChanges(this)"><i class="bi bi-floppy"></i> Save Changes</button>
         </div>
     </div>
 </div>
@@ -326,6 +321,11 @@
         btn.disabled = true;
         btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(217,119,6,.35);border-top-color:#d97706;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Routing…';
         document.getElementById('routeForm').submit();
+    }
+    function saveTicketChanges(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Saving…';
+        document.getElementById('editTicketForm').submit();
     }
     let _currentTicketStatus = null;
     let _currentTicketNum    = null;

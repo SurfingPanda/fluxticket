@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $ticket->ticket_number }} — FluxTickets</title>
+    <title>{{ $ticket->ticket_number }} — ECTicketing</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1e293b; background: #fff; }
@@ -158,7 +158,7 @@
             <div class="doc-logo">
                 <div class="logo-icon">🎫</div>
                 <div>
-                    <div class="logo-name">FluxTickets</div>
+                    <div class="logo-name">ECTicketing</div>
                     <div class="logo-sub">Service Ticket Report</div>
                 </div>
             </div>
@@ -323,7 +323,7 @@
 
         {{-- Footer --}}
         <div class="doc-footer">
-            <span>FluxTickets — Service Management System</span>
+            <span>ECTicketing — Service Management System</span>
             <span>{{ $ticket->ticket_number }} &bull; Generated {{ now()->format('Y-m-d H:i') }}</span>
         </div>
 

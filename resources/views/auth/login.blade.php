@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign in — FluxTickets</title>
+    <title>Sign in — ECTicketing</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -427,8 +427,8 @@
             <div class="left-panel">
                 <div style="position:relative;z-index:1">
                     <div class="brand-row">
-                        <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets Logo">
-                        <span class="brand-name">FluxTickets</span>
+                        <img src="{{ asset('Image/logo.png') }}" alt="ECTicketing Logo">
+                        <span class="brand-name">ECTicketing</span>
                     </div>
                     <div class="accent-bar"></div>
 
@@ -549,7 +549,7 @@
             </div>
         </div>
 
-        <p class="copyright">&copy; {{ date('Y') }} FluxTickets. All rights reserved.</p>
+        <p class="copyright">&copy; {{ date('Y') }} ECTicketing. All rights reserved.</p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

@@ -207,7 +207,7 @@
             <button class="btn-cancel" onclick="closeModal('viewModal')">Close</button>
             <a id="vm-print-btn" href="#" target="_blank" class="btn-ghost"><i class="bi bi-printer"></i> Print / PDF</a>
             <button id="vm-route-btn" onclick="openRouteFromView()" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:.6rem;color:#fbbf24;font-size:.875rem;font-weight:600;padding:.5rem 1rem;display:flex;align-items:center;gap:.4rem;cursor:pointer"><i class="bi bi-arrow-left-right"></i> Route</button>
-            <button id="vm-save-btn" class="btn-submit" style="display:none" onclick="document.getElementById('editTicketForm').submit()"><i class="bi bi-floppy"></i> Save Changes</button>
+            <button id="vm-save-btn" class="btn-submit" style="display:none" onclick="saveTicketChanges(this)"><i class="bi bi-floppy"></i> Save Changes</button>
         </div>
     </div>
 </div>
@@ -256,6 +256,11 @@
         btn.disabled = true;
         btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(217,119,6,.35);border-top-color:#d97706;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Routing…';
         document.getElementById('routeForm').submit();
+    }
+    function saveTicketChanges(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Saving…';
+        document.getElementById('editTicketForm').submit();
     }
     let _currentTicketStatus = null;
     const _notesCache = {};

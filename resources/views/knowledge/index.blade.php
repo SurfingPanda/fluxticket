@@ -323,7 +323,7 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
             <h3><i class="bi bi-plus-circle" style="color:#818cf8"></i> New Article</h3>
             <button class="kb-modal-close" onclick="closeKbModal('newArticleModal')"><i class="bi bi-x-lg"></i></button>
         </div>
-        <form method="POST" action="{{ route('knowledge.store') }}" id="newArticleForm">
+        <form method="POST" action="{{ route('knowledge.store') }}" id="newArticleForm" onsubmit="return kbFormLoading(this)">
             @csrf
             <div class="kb-modal-body">
 
@@ -423,14 +423,36 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
             <div id="va-content" style="font-size:.875rem;color:var(--text);line-height:1.75;white-space:pre-wrap;background:var(--surface2);border-radius:.65rem;padding:1rem 1.15rem;min-height:80px"></div>
         </div>
         <div class="kb-modal-footer" style="justify-content:space-between">
-            <form id="va-delete-form" method="POST" style="margin:0" onsubmit="return confirm('Delete this article?')">
+            <form id="va-delete-form" method="POST" style="margin:0">
                 @csrf
                 @method('DELETE')
-                <button type="submit" id="va-delete-btn" class="kb-delete-btn" style="display:none">
+                <button type="button" id="va-delete-btn" class="kb-delete-btn" style="display:none" onclick="openDeleteConfirm()">
                     <i class="bi bi-trash3"></i> Delete
                 </button>
             </form>
             <button class="btn-cancel-modal" onclick="closeKbModal('viewArticleModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+{{-- Delete Confirmation Modal --}}
+<div class="kb-modal-overlay" id="deleteArticleModal" onclick="closeKbModalOutside(event,'deleteArticleModal')">
+    <div class="kb-modal" style="max-width:420px">
+        <div class="kb-modal-header">
+            <h3><i class="bi bi-exclamation-triangle-fill" style="color:#f87171"></i> Delete Article</h3>
+            <button class="kb-modal-close" onclick="closeKbModal('deleteArticleModal')"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="kb-modal-body">
+            <p style="font-size:.85rem;color:var(--text);line-height:1.65;margin:0 0 .4rem">
+                Are you sure you want to delete <strong id="del-article-title">this article</strong>?
+            </p>
+            <p style="font-size:.78rem;color:var(--muted);margin:0">This action cannot be undone.</p>
+        </div>
+        <div class="kb-modal-footer">
+            <button type="button" class="btn-cancel-modal" onclick="closeKbModal('deleteArticleModal')">Cancel</button>
+            <button type="button" class="kb-delete-btn" id="confirmDeleteBtn" style="display:inline-flex" onclick="confirmDeleteArticle()">
+                <i class="bi bi-trash3"></i> Delete Article
+            </button>
         </div>
     </div>
 </div>
@@ -443,7 +465,7 @@ $allArticlesJson = $articles->map(function($a) use ($catMapForJson) {
             <h3><i class="bi bi-pencil-square" style="color:#818cf8"></i> Edit Article</h3>
             <button class="kb-modal-close" onclick="closeKbModal('editArticleModal')"><i class="bi bi-x-lg"></i></button>
         </div>
-        <form method="POST" id="editArticleForm">
+        <form method="POST" id="editArticleForm" onsubmit="return kbFormLoading(this)">
             @csrf
             @method('PUT')
             <div class="kb-modal-body">
@@ -656,6 +678,31 @@ function openEditFromView() {
     document.getElementById('editArticleForm').action = art.updateUrl;
 
     openKbModal('editArticleModal');
+}
+
+/* ── Delete Article ── */
+function openDeleteConfirm() {
+    if (!_currentArticle) return;
+    document.getElementById('del-article-title').textContent = _currentArticle.title;
+    closeKbModal('viewArticleModal');
+    openKbModal('deleteArticleModal');
+}
+
+function confirmDeleteArticle() {
+    const btn = document.getElementById('confirmDeleteBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(248,113,113,.35);border-top-color:#f87171;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Deleting…';
+    document.getElementById('va-delete-form').submit();
+}
+
+/* ── Save-button loading state ── */
+function kbFormLoading(form) {
+    const btn = form.querySelector('button[type="submit"]');
+    if (btn) {
+        btn.disabled  = true;
+        btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Saving…';
+    }
+    return true;
 }
 
 /* ── Auto-dismiss toast ── */

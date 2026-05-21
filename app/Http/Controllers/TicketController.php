@@ -52,6 +52,8 @@ class TicketController extends Controller
             $path = $request->file('attachment')->store('attachments', 'public');
         }
 
+        $assigneeUser = $this->userByName($data['assignee'] ?? null);
+
         $ticket = \App\Models\Ticket::create([
             'ticket_number' => \App\Models\Ticket::generateNumber($data['type'] ?? ''),
             'user_id'       => auth()->id(),
@@ -63,6 +65,7 @@ class TicketController extends Controller
             'type'          => $data['type'] ?? null,
             'priority'      => $data['priority'],
             'assignee'      => $data['assignee'] ?? null,
+            'assignee_id'   => $assigneeUser?->id,
             'description'   => $data['description'],
             'attachment'    => $path,
             'status'        => 'open',
@@ -117,10 +120,11 @@ class TicketController extends Controller
             $ticket->sla_due_at = \App\Models\Ticket::slaDeadline($data['priority'], $ticket->created_at);
         }
 
-        $ticket->status     = $data['status'];
-        $ticket->priority   = $data['priority'];
-        $ticket->assignee   = $data['assignee'] ?? null;
-        $ticket->resolution = $data['resolution'] ?? null;
+        $ticket->status      = $data['status'];
+        $ticket->priority    = $data['priority'];
+        $ticket->assignee    = $data['assignee'] ?? null;
+        $ticket->assignee_id = $this->userByName($data['assignee'] ?? null)?->id;
+        $ticket->resolution  = $data['resolution'] ?? null;
 
         if ($request->hasFile('resolution_image')) {
             $ticket->resolution_image = $request->file('resolution_image')
@@ -128,8 +132,9 @@ class TicketController extends Controller
         }
 
         if (in_array($data['status'], ['resolved', 'closed']) && !$ticket->resolved_at) {
-            $ticket->resolved_by = auth()->user()->name;
-            $ticket->resolved_at = now();
+            $ticket->resolved_by    = auth()->user()->name;
+            $ticket->resolved_by_id = auth()->id();
+            $ticket->resolved_at    = now();
         }
 
         $ticket->save();
@@ -172,7 +177,8 @@ class TicketController extends Controller
 
     public function assignToMe(\App\Models\Ticket $ticket)
     {
-        $ticket->assignee = auth()->user()->name;
+        $ticket->assignee    = auth()->user()->name;
+        $ticket->assignee_id = auth()->id();
         if ($ticket->status === 'open') {
             $ticket->status = 'progress';
         }
@@ -193,11 +199,15 @@ class TicketController extends Controller
             'routing_note' => ['nullable', 'string'],
         ]);
 
+        $routedUser = $this->userByName($data['routed_to']);
+
         $ticket->routed_to    = $data['routed_to'];
+        $ticket->routed_to_id = $routedUser?->id;
         $ticket->department   = $data['department'];
         $ticket->routing_note = $data['routing_note'] ?? null;
         $ticket->routed_at    = now();
         $ticket->assignee     = $data['routed_to'];
+        $ticket->assignee_id  = $routedUser?->id;
         $ticket->status       = 'progress';
         $ticket->save();
 
@@ -214,7 +224,6 @@ class TicketController extends Controller
         ]);
 
         // Notify the agent the ticket was routed to
-        $routedUser = $this->userByName($data['routed_to']);
         if ($routedUser) {
             $this->notify($routedUser->id, 'routed', $ticket,
                 "Ticket {$ticket->ticket_number} has been assigned to you ({$data['department']}): \"{$ticket->subject}\"");
@@ -243,6 +252,7 @@ class TicketController extends Controller
 
         $ticket->status           = 'rejected';
         $ticket->rejected_by      = auth()->user()->name;
+        $ticket->rejected_by_id   = auth()->id();
         $ticket->rejected_at      = now();
         $ticket->rejection_reason = $data['rejection_reason'];
         $ticket->save();

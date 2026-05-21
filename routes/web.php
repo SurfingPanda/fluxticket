@@ -155,7 +155,7 @@ Route::middleware('auth')->group(function () {
         $relatedTicketIds = \App\Models\Ticket::where(function ($q) use ($user) {
             $q->where('user_id', $user->id)
               ->orWhere('requester_id', $user->id)
-              ->orWhere('assignee', $user->name);
+              ->orWhere('assignee_id', $user->id);
             if ($user->department) {
                 $q->orWhere('department', $user->department);
             }
@@ -201,7 +201,7 @@ Route::middleware('auth')->group(function () {
                 fn($q) => $q->where(function ($q) use ($user) {
                     $q->where('user_id', $user->id)
                       ->orWhere('requester_id', $user->id)
-                      ->orWhere('assignee', $user->name);
+                      ->orWhere('assignee_id', $user->id);
                     if ($user->department) {
                         $q->orWhere('department', $user->department);
                     }
@@ -243,7 +243,7 @@ Route::middleware('auth')->group(function () {
             ->when(! $user->isSuperAdmin(), fn($query) => $query->where(function ($sub) use ($user) {
                 $sub->where('user_id', $user->id)
                     ->orWhere('requester_id', $user->id)
-                    ->orWhere('assignee', $user->name);
+                    ->orWhere('assignee_id', $user->id);
                 if ($user->department) $sub->orWhere('department', $user->department);
             }))
             ->where(function ($query) use ($q) {
@@ -294,7 +294,7 @@ Route::middleware('auth')->group(function () {
         $user    = auth()->user();
         $tickets = \App\Models\Ticket::with(['user','notes.user','knowledgeArticles'])
             ->where(function ($q) use ($user) {
-                $q->where('assignee', $user->name)
+                $q->where('assignee_id', $user->id)
                   ->orWhere('user_id', $user->id);
             })
             ->latest()->get();
@@ -313,36 +313,48 @@ Route::middleware('auth')->group(function () {
         return view('queue', compact('tickets','deptUsers','allKbas','allowedDepts','openTicket') + ['activePage'=>'queue']);
     })->name('queue');
 
+    // ── Department Tickets ──
+    Route::get('/department-tickets', function () {
+        $user = auth()->user();
+        $dept = $user->department;
+        $tickets = \App\Models\Ticket::with(['user','notes.user'])
+            ->when(
+                $dept,
+                fn($q) => $q->where(fn($w) => $w->where('department', $dept)
+                                                ->orWhere('requester_dept', $dept)),
+                fn($q) => $q->whereRaw('1 = 0')
+            )
+            ->latest()->get();
+        $openTicket = null;
+        if (request('open')) {
+            $openTicket = \App\Models\Ticket::with(['user','notes.user'])
+                ->find((int) request('open'));
+        }
+        return view('department-tickets', compact('tickets','openTicket','dept') + ['activePage'=>'department_tickets']);
+    })->name('department.tickets');
+
     // ── Agents ──
     Route::get('/agents', function () {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['agents'] ?? false), 403, 'Access restricted by administrator.');
-        }
-        $ticketCounts = \App\Models\Ticket::selectRaw('assignee, status, count(*) as count')
-            ->groupBy('assignee','status')->get()->groupBy('assignee');
+        $ticketCounts = \App\Models\Ticket::selectRaw('assignee_id, status, count(*) as count')
+            ->groupBy('assignee_id','status')->get()->groupBy('assignee_id');
         $agents = \App\Models\User::whereNotNull('department')->where('role','agent')->orderBy('department')->orderBy('name')->get()
             ->map(function ($u) use ($ticketCounts) {
-                $rows = $ticketCounts->get($u->name, collect());
+                $rows = $ticketCounts->get($u->id, collect());
                 $u->open_tickets     = $rows->where('status','open')->sum('count');
                 $u->active_tickets   = $rows->where('status','progress')->sum('count');
                 $u->resolved_tickets = $rows->whereIn('status',['resolved','closed'])->sum('count');
                 return $u;
             });
         return view('agents.index', compact('agents') + ['activePage'=>'agents']);
-    })->name('agents.index');
+    })->middleware('page:agents')->name('agents.index');
 
     Route::get('/agents/departments', function () {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['agents'] ?? false), 403, 'Access restricted by administrator.');
-        }
-        $ticketCounts = \App\Models\Ticket::selectRaw('assignee, status, count(*) as count')
-            ->groupBy('assignee', 'status')->get()->groupBy('assignee');
+        $ticketCounts = \App\Models\Ticket::selectRaw('assignee_id, status, count(*) as count')
+            ->groupBy('assignee_id', 'status')->get()->groupBy('assignee_id');
         $agents = \App\Models\User::whereNotNull('department')->where('role', 'agent')
             ->orderBy('department')->orderBy('name')->get()
             ->map(function ($u) use ($ticketCounts) {
-                $rows = $ticketCounts->get($u->name, collect());
+                $rows = $ticketCounts->get($u->id, collect());
                 $u->open_tickets     = $rows->where('status', 'open')->sum('count');
                 $u->active_tickets   = $rows->where('status', 'progress')->sum('count');
                 $u->resolved_tickets = $rows->whereIn('status', ['resolved', 'closed'])->sum('count');
@@ -351,27 +363,23 @@ Route::middleware('auth')->group(function () {
             });
         $departments = $agents->groupBy('department');
         return view('agents.departments', compact('departments') + ['activePage' => 'agents_departments']);
-    })->name('agents.departments');
+    })->middleware('page:agents')->name('agents.departments');
 
     Route::get('/reports/agents', function () {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['reports'] ?? false), 403, 'Access restricted by administrator.');
-        }
-        $ticketCountsRaw = \App\Models\Ticket::selectRaw('assignee, status, count(*) as cnt')
-            ->whereNotNull('assignee')->groupBy('assignee', 'status')->get()->groupBy('assignee');
-        $agentAvgHrs = \App\Models\Ticket::selectRaw('assignee, avg(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) as avg_min')
-            ->whereIn('status', ['resolved', 'closed'])->whereNotNull('resolved_at')->whereNotNull('assignee')
-            ->groupBy('assignee')->pluck('avg_min', 'assignee');
+        $ticketCountsRaw = \App\Models\Ticket::selectRaw('assignee_id, status, count(*) as cnt')
+            ->whereNotNull('assignee_id')->groupBy('assignee_id', 'status')->get()->groupBy('assignee_id');
+        $agentAvgHrs = \App\Models\Ticket::selectRaw('assignee_id, avg(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) as avg_min')
+            ->whereIn('status', ['resolved', 'closed'])->whereNotNull('resolved_at')->whereNotNull('assignee_id')
+            ->groupBy('assignee_id')->pluck('avg_min', 'assignee_id');
         $agentPerf = \App\Models\User::whereNotNull('department')->where('role', 'agent')->orderBy('name')
-            ->get(['name', 'department'])
+            ->get(['id', 'name', 'department'])
             ->map(function ($user) use ($ticketCountsRaw, $agentAvgHrs) {
-                $rows     = $ticketCountsRaw->get($user->name, collect());
+                $rows     = $ticketCountsRaw->get($user->id, collect());
                 $total    = $rows->sum('cnt');
                 $resolved = $rows->whereIn('status', ['resolved', 'closed'])->sum('cnt');
                 $open     = $rows->where('status', 'open')->sum('cnt');
                 $progress = $rows->where('status', 'progress')->sum('cnt');
-                $avgMin   = $agentAvgHrs->get($user->name);
+                $avgMin   = $agentAvgHrs->get($user->id);
                 return (object)[
                     'name'     => $user->name,
                     'dept'     => $user->department,
@@ -384,7 +392,7 @@ Route::middleware('auth')->group(function () {
                 ];
             })->sortByDesc('total');
         return view('reports.agents', compact('agentPerf') + ['activePage' => 'reports_agents']);
-    })->name('reports.agents');
+    })->middleware('page:reports')->name('reports.agents');
 
     // ── Categories ──
     Route::get('/categories', function () {
@@ -400,10 +408,6 @@ Route::middleware('auth')->group(function () {
 
     // ── Reports ──
     Route::get('/reports', function () {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['reports'] ?? false), 403, 'Access restricted by administrator.');
-        }
         $now        = now();
         $weekStart  = $now->copy()->startOfWeek();
         $monthStart = $now->copy()->startOfMonth();
@@ -434,20 +438,20 @@ Route::middleware('auth')->group(function () {
         $slaTotal = $slaTickets->count();
 
         // Agent performance via DB aggregation
-        $ticketCountsRaw = \App\Models\Ticket::selectRaw('assignee, status, count(*) as cnt')
-            ->whereNotNull('assignee')->groupBy('assignee','status')->get()->groupBy('assignee');
-        $agentAvgHrs = \App\Models\Ticket::selectRaw('assignee, avg(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) as avg_min')
-            ->whereIn('status',['resolved','closed'])->whereNotNull('resolved_at')->whereNotNull('assignee')
-            ->groupBy('assignee')->pluck('avg_min','assignee');
+        $ticketCountsRaw = \App\Models\Ticket::selectRaw('assignee_id, status, count(*) as cnt')
+            ->whereNotNull('assignee_id')->groupBy('assignee_id','status')->get()->groupBy('assignee_id');
+        $agentAvgHrs = \App\Models\Ticket::selectRaw('assignee_id, avg(TIMESTAMPDIFF(MINUTE, created_at, resolved_at)) as avg_min')
+            ->whereIn('status',['resolved','closed'])->whereNotNull('resolved_at')->whereNotNull('assignee_id')
+            ->groupBy('assignee_id')->pluck('avg_min','assignee_id');
         $agentPerf = \App\Models\User::whereNotNull('department')->orderBy('name')
-            ->get(['name','department'])
+            ->get(['id','name','department'])
             ->map(function($user) use ($ticketCountsRaw, $agentAvgHrs) {
-                $rows     = $ticketCountsRaw->get($user->name, collect());
+                $rows     = $ticketCountsRaw->get($user->id, collect());
                 $total    = $rows->sum('cnt');
                 if (! $total) return null;
                 $resolved = $rows->whereIn('status',['resolved','closed'])->sum('cnt');
                 $open     = $rows->whereIn('status',['open','progress'])->sum('cnt');
-                $avgMin   = $agentAvgHrs->get($user->name);
+                $avgMin   = $agentAvgHrs->get($user->id);
                 return (object)['name'=>$user->name,'dept'=>$user->department,'total'=>$total,'resolved'=>$resolved,'open'=>$open,'rate'=>round($resolved/$total*100),'avg_hrs'=>$avgMin ? round($avgMin/60,1) : null];
             })->filter()->sortByDesc('total')->take(20);
 
@@ -477,7 +481,7 @@ Route::middleware('auth')->group(function () {
         ];
 
         return view('reports.index', compact('stats') + ['activePage'=>'reports']);
-    })->name('reports.index');
+    })->middleware('page:reports')->name('reports.index');
 
     // ── Notifications ──
     Route::get('/notifications/data', function () {
@@ -502,21 +506,13 @@ Route::middleware('auth')->group(function () {
 
     // ── Knowledge Base ──
     Route::get('/knowledge-base', function () {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['knowledge_read'] ?? false), 403, 'Access restricted by administrator.');
-        }
         $articles = \App\Models\KnowledgeArticle::with(['user', 'tickets:id,ticket_number,subject'])
             ->withCount('tickets')
             ->latest()->get();
         return view('knowledge.index', ['activePage' => 'knowledge', 'articles' => $articles]);
-    })->name('knowledge.index');
+    })->middleware('page:knowledge_read')->name('knowledge.index');
 
     Route::post('/knowledge-base', function (\Illuminate\Http\Request $request) {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['knowledge_write'] ?? false), 403, 'Access restricted by administrator.');
-        }
         $data = $request->validate([
             'title'    => ['required', 'string', 'max:255'],
             'category' => ['required', 'string'],
@@ -528,7 +524,7 @@ Route::middleware('auth')->group(function () {
         $data['kba_number'] = \App\Models\KnowledgeArticle::generateNumber();
         \App\Models\KnowledgeArticle::create($data);
         return back()->with('kb_success', 'Article saved successfully!');
-    })->name('knowledge.store');
+    })->middleware('page:knowledge_write')->name('knowledge.store');
 
     Route::put('/knowledge-base/{article}', function (\Illuminate\Http\Request $request, \App\Models\KnowledgeArticle $article) {
         abort_if($article->user_id !== auth()->id(), 403);
@@ -649,19 +645,11 @@ Route::middleware('auth')->group(function () {
 
     // ── Integrations ──
     Route::get('/integrations', function () {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['settings'] ?? false), 403, 'Access restricted by administrator.');
-        }
         return view('system.integrations', ['activePage' => 'integrations']);
-    })->name('integrations.index');
+    })->middleware('super_admin')->name('integrations.index');
 
     // ── Audit Logs ──
     Route::get('/audit-logs', function (\Illuminate\Http\Request $request) {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['settings'] ?? false), 403, 'Access restricted by administrator.');
-        }
         try {
             // Auto-log newly breached SLA tickets
             $breached = \App\Models\Ticket::whereNotIn('status', ['resolved', 'closed'])
@@ -708,16 +696,12 @@ Route::middleware('auth')->group(function () {
             $logs = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 50);
         }
         return view('system.audit-logs', compact('logs') + ['activePage' => 'audit_logs']);
-    })->name('audit.logs');
+    })->middleware('super_admin')->name('audit.logs');
 
     // ── Settings ──
     Route::get('/settings', function () {
-        if (!auth()->user()->isSuperAdmin()) {
-            $p = auth()->user()->effectivePageAccess();
-            abort_if(!($p['settings'] ?? false), 403, 'Access restricted by administrator.');
-        }
         return view('settings.index', ['activePage'=>'settings']);
-    })->name('settings.index');
+    })->middleware('page:settings')->name('settings.index');
 
     Route::put('/settings/profile', [\App\Http\Controllers\SettingsController::class, 'updateProfile'])
         ->name('settings.profile');

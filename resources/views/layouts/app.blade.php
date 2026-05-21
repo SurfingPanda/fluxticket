@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'FluxTickets') — FluxTickets</title>
+    <title>@yield('title', 'ECTicketing') — ECTicketing</title>
     <link rel="icon" type="image/png" href="{{ asset('Image/logo.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -272,9 +272,9 @@
 <aside class="sidebar" id="appSidebar">
     <div class="sidebar-brand">
         <div class="brand-icon">
-            <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets Logo">
+            <img src="{{ asset('Image/logo.png') }}" alt="ECTicketing Logo">
         </div>
-        <span class="brand-name">FluxTickets</span>
+        <span class="brand-name">ECTicketing</span>
         <button class="sidebar-toggle" id="sidebarToggle" title="Collapse sidebar" type="button">
             <i class="bi bi-layout-sidebar" id="sidebarToggleIcon"></i>
         </button>
@@ -288,7 +288,7 @@
         <a class="nav-item-link {{ $ap==='calendar'?'active':'' }}" href="{{ route('calendar') }}">
             <i class="bi bi-calendar3 nav-icon"></i><span class="nav-text">Calendar</span>
         </a>
-        <button class="nav-item-link nav-dropdown-trigger {{ in_array($ap,['tickets','queue'])?'active':'' }}" id="ticketsDropdownTrigger" type="button">
+        <button class="nav-item-link nav-dropdown-trigger {{ in_array($ap,['tickets','queue','department_tickets'])?'active':'' }}" id="ticketsDropdownTrigger" type="button">
             <i class="bi bi-ticket-perforated nav-icon"></i>
             <span class="nav-text">All Tickets</span>
             <i class="bi bi-chevron-down nav-chevron nav-badge"></i>
@@ -297,6 +297,9 @@
             <a class="nav-item-link nav-sub-item {{ $ap==='queue'?'active':'' }}" href="{{ route('queue') }}">
                 <i class="bi bi-clock-history nav-icon" style="font-size:.85rem"></i><span class="nav-text">My Queue</span>
                 <span id="queueNotifBadge" style="display:none;margin-left:auto;min-width:18px;height:18px;background:#f87171;border-radius:9999px;font-size:.6rem;font-weight:700;color:white;align-items:center;justify-content:center;padding:0 4px;line-height:1;flex-shrink:0"></span>
+            </a>
+            <a class="nav-item-link nav-sub-item {{ $ap==='department_tickets'?'active':'' }}" href="{{ route('department.tickets') }}">
+                <i class="bi bi-building nav-icon" style="font-size:.85rem"></i><span class="nav-text">Department Tickets</span>
             </a>
         </div>
 
@@ -366,12 +369,14 @@
             <a class="nav-item-link nav-sub-item {{ $ap==='settings'?'active':'' }}" href="{{ route('settings.index') }}">
                 <i class="bi bi-gear nav-icon" style="font-size:.85rem"></i><span class="nav-text">Settings</span>
             </a>
+            @if($_isSA)
             <a class="nav-item-link nav-sub-item {{ $ap==='integrations'?'active':'' }}" href="{{ route('integrations.index') }}">
                 <i class="bi bi-plug nav-icon" style="font-size:.85rem"></i><span class="nav-text">Integrations</span>
             </a>
             <a class="nav-item-link nav-sub-item {{ $ap==='audit_logs'?'active':'' }}" href="{{ route('audit.logs') }}">
                 <i class="bi bi-journal-text nav-icon" style="font-size:.85rem"></i><span class="nav-text">Audit Logs</span>
             </a>
+            @endif
         </div>
         @endif
     </div>
@@ -466,7 +471,7 @@ $_deptList = auth()->user()->isSuperAdmin()
 @stack('modals')
 
 {{-- ════ New Ticket Modal (layout-level, available on every page) ════ --}}
-<div class="flux-modal-backdrop" id="newTicketModal" onclick="if(event.target===this)closeModal('newTicketModal')">
+<div class="flux-modal-backdrop" id="newTicketModal">
     <div class="flux-modal" style="max-width:580px">
         <div class="flux-modal-header">
             <div class="d-flex align-items-center gap-2">
@@ -636,7 +641,7 @@ $_deptList = auth()->user()->isSuperAdmin()
         const submenu = document.getElementById('ticketsSubmenu');
         const chevron = trigger ? trigger.querySelector('.nav-chevron') : null;
         const stored = localStorage.getItem('ticketsDropdown');
-        const open = stored === 'open';
+        const open = stored === 'open' || {{ in_array($ap ?? '', ['tickets','queue','department_tickets']) ? 'true' : 'false' }};
         if (open && submenu) { submenu.classList.add('open'); if (chevron) chevron.style.transform = 'rotate(180deg)'; }
         if (trigger) trigger.addEventListener('click', function() {
             submenu.classList.toggle('open');

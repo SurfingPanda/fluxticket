@@ -14,7 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(fn () => route('dashboard'));
-        $middleware->alias(['super_admin' => \App\Http\Middleware\SuperAdmin::class]);
+        $middleware->alias([
+            'super_admin' => \App\Http\Middleware\SuperAdmin::class,
+            'page'        => \App\Http\Middleware\PageAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

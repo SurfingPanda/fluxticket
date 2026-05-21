@@ -8,10 +8,10 @@ class Ticket extends Model
 {
     protected $fillable = [
         'ticket_number', 'user_id', 'requester', 'requester_id', 'requester_dept',
-        'subject', 'category', 'type', 'priority', 'assignee', 'department', 'description', 'attachment',
-        'status', 'sla_due_at', 'resolution', 'resolution_image', 'resolved_by', 'resolved_at',
-        'rejected_by', 'rejected_at', 'rejection_reason',
-        'routed_to', 'routing_note', 'routed_at',
+        'subject', 'category', 'type', 'priority', 'assignee', 'assignee_id', 'department', 'description', 'attachment',
+        'status', 'sla_due_at', 'resolution', 'resolution_image', 'resolved_by', 'resolved_by_id', 'resolved_at',
+        'rejected_by', 'rejected_by_id', 'rejected_at', 'rejection_reason',
+        'routed_to', 'routed_to_id', 'routing_note', 'routed_at',
     ];
 
     protected $casts = [
@@ -75,6 +75,36 @@ class Ticket extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** The person the ticket is for (may differ from the creator, user_id). */
+    public function requesterUser()
+    {
+        return $this->belongsTo(User::class, 'requester_id');
+    }
+
+    /** The agent the ticket is currently assigned to. */
+    public function assignedAgent()
+    {
+        return $this->belongsTo(User::class, 'assignee_id');
+    }
+
+    /** The agent who resolved/closed the ticket. */
+    public function resolver()
+    {
+        return $this->belongsTo(User::class, 'resolved_by_id');
+    }
+
+    /** The agent who rejected the ticket. */
+    public function rejecter()
+    {
+        return $this->belongsTo(User::class, 'rejected_by_id');
+    }
+
+    /** The agent the ticket was routed to. */
+    public function routedAgent()
+    {
+        return $this->belongsTo(User::class, 'routed_to_id');
     }
 
     public function notes()

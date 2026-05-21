@@ -18,12 +18,12 @@
               <tr>
                 <td style="vertical-align:middle;padding-right:10px;">
                   <img src="{{ asset('Image/logo.png') }}"
-                       alt="FluxTickets"
+                       alt="ECTicketing"
                        width="44" height="44"
                        style="display:block;filter:drop-shadow(0 2px 6px rgba(180,20,40,.5));">
                 </td>
                 <td style="vertical-align:middle;">
-                  <span style="font-size:1.35rem;font-weight:700;color:#ffffff;letter-spacing:.02em;">FluxTickets</span>
+                  <span style="font-size:1.35rem;font-weight:700;color:#ffffff;letter-spacing:.02em;">ECTicketing</span>
                 </td>
               </tr>
             </table>
@@ -64,7 +64,7 @@
               Ticket Status Updated
             </h1>
             <p style="margin:0 0 24px;font-size:.9rem;color:#475569;">
-              Your ticket on <strong style="color:#6366f1;">FluxTickets</strong> has been updated. Here's a summary of the current state:
+              Your ticket on <strong style="color:#6366f1;">ECTicketing</strong> has been updated. Here's a summary of the current state:
             </p>
 
             {{-- Ticket info card --}}
@@ -168,7 +168,7 @@
 
             <p style="margin:0;font-size:.85rem;color:#64748b;">
               Thanks,<br>
-              <strong style="color:#0f172a;">The FluxTickets Team</strong>
+              <strong style="color:#0f172a;">The ECTicketing Team</strong>
             </p>
 
           </td>
@@ -178,10 +178,10 @@
         <tr>
           <td style="background:#1e293b;border-radius:0 0 12px 12px;padding:18px 36px;text-align:center;">
             <p style="margin:0 0 4px;font-size:.78rem;color:#94a3b8;">
-              You received this email because your ticket status was updated on FluxTickets.
+              You received this email because your ticket status was updated on ECTicketing.
             </p>
             <p style="margin:0;font-size:.75rem;color:#64748b;">
-              &copy; {{ date('Y') }} FluxTickets. All rights reserved.
+              &copy; {{ date('Y') }} ECTicketing. All rights reserved.
             </p>
           </td>
         </tr>

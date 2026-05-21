@@ -323,7 +323,7 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
                 style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:.6rem;color:#fbbf24;font-size:.875rem;font-weight:600;padding:.5rem 1rem;display:flex;align-items:center;gap:.4rem;cursor:pointer;transition:background .15s">
                 <i class="bi bi-arrow-left-right"></i> Route
             </button>
-            <button id="vm-save-btn" class="btn-submit" style="display:none" onclick="document.getElementById('editTicketForm').submit()">
+            <button id="vm-save-btn" class="btn-submit" style="display:none" onclick="saveTicketChanges(this)">
                 <i class="bi bi-floppy"></i> Save Changes
             </button>
         </div>
@@ -616,6 +616,11 @@ $pageTitle = isset($type) && $type ? ($typeLabels[$type] ?? 'All Tickets') : 'Al
         btn.disabled = true;
         btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(217,119,6,.35);border-top-color:#d97706;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Routing…';
         document.getElementById('routeForm').submit();
+    }
+    function saveTicketChanges(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span style="display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span> Saving…';
+        document.getElementById('editTicketForm').submit();
     }
     function handleBdClick(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
     document.addEventListener('keydown', e => {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FluxTickets — Smart Service Management</title>
+    <title>ECTicketing — Smart Service Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
@@ -158,8 +158,8 @@
 {{-- ── Navbar ── --}}
 <nav class="navbar">
     <a href="{{ route('landing') }}" class="nav-logo">
-        <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets">
-        <span class="nav-logo-text">FluxTickets</span>
+        <img src="{{ asset('Image/logo.png') }}" alt="ECTicketing">
+        <span class="nav-logo-text">ECTicketing</span>
     </a>
     <div class="nav-actions">
         <div style="display:flex;align-items:center;gap:.4rem">
@@ -185,7 +185,7 @@
     </div>
     <div class="hero-inner">
         <div class="fade-up">
-            <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets" class="hero-logo">
+            <img src="{{ asset('Image/logo.png') }}" alt="ECTicketing" class="hero-logo">
         </div>
         <div class="hero-badge fade-up fade-up-1">
             <i class="bi bi-lightning-charge-fill"></i> Smart Service Management Platform
@@ -307,7 +307,7 @@
     <div class="section-inner">
         <div class="section-label">Ticket Types</div>
         <h2 class="section-title">Handle every request type</h2>
-        <p class="section-sub">FluxTickets supports four structured ticket types — ensuring the right process for every issue.</p>
+        <p class="section-sub">ECTicketing supports four structured ticket types — ensuring the right process for every issue.</p>
         <div class="types-grid">
             <div class="type-card">
                 <div class="type-icon" style="background:rgba(248,113,113,.15);color:#f87171"><i class="bi bi-exclamation-triangle-fill"></i></div>
@@ -346,7 +346,7 @@
     <div class="section-inner">
         <div class="section-label">Reports & Analytics</div>
         <h2 class="section-title">Live system snapshot</h2>
-        <p class="section-sub">Real-time metrics from the FluxTickets platform — updated every time the page loads.</p>
+        <p class="section-sub">Real-time metrics from the ECTicketing platform — updated every time the page loads.</p>
 
         {{-- KPI cards --}}
         @php $total = max($landingStats['total'], 1); @endphp
@@ -469,10 +469,10 @@
 <footer class="footer">
     <div class="footer-inner">
         <div class="footer-logo">
-            <img src="{{ asset('Image/logo.png') }}" alt="FluxTickets">
-            <span>FluxTickets</span>
+            <img src="{{ asset('Image/logo.png') }}" alt="ECTicketing">
+            <span>ECTicketing</span>
         </div>
-        <div class="footer-copy">&copy; {{ date('Y') }} FluxTickets. All rights reserved.</div>
+        <div class="footer-copy">&copy; {{ date('Y') }} ECTicketing. All rights reserved.</div>
     </div>
 </footer>
 

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title','Integrations')
 @section('topbar-title','Integrations')
-@section('topbar-sub','Connect FluxTickets with external services and tools')
+@section('topbar-sub','Connect ECTicketing with external services and tools')
 
 @push('styles')
     .int-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1rem; }
@@ -64,7 +64,7 @@ $integrations = [
     ],
     [
         'name'        => 'REST API',
-        'description' => 'Integrate FluxTickets into your own apps using the REST API and API keys.',
+        'description' => 'Integrate ECTicketing into your own apps using the REST API and API keys.',
         'icon'        => '⚙️',
         'bg'          => 'rgba(248,113,113,.08)',
         'connected'   => false,
